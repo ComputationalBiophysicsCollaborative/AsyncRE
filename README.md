@@ -15,7 +15,7 @@ ASyncRE: https://github.com/ComputationalBiophysicsCollaborative/AsyncRE
 Installation
 ------------
 
-ASyncRE depends on few which are easily installed from PiP: 
+ASyncRE depends on few modules which are easily installed from PiP: 
 
     pip install numpy
     pip install configobj

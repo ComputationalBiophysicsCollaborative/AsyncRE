@@ -1,0 +1,14 @@
+EXECUTABLE
+
+Adapt the 'runimpact' shell script to your environment
+
+INTERACTIVE EXECUTION
+
+place list of remote hosts in nodefile
+
+$ python $ASYNC_RE_DIRECTORY/bedamtempt_async_re.py bedam_remd.cntl
+
+
+BATCH EXECUTION (Torque/PBS, modify as appropriate)
+
+$ qsub bedam_remd.qsub

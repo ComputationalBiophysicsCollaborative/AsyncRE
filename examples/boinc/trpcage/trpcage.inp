@@ -1,0 +1,55 @@
+
+write file -
+"md.out" -
+      title -
+"md" *
+
+! @jobname@_r@replica@_c@cycle@
+
+CREATE
+  build primary name species1 type auto read sqldb file -
+"md-in.dms"
+QUIT
+
+SETMODEL
+  setpotential
+    mmechanics consolv agbnp2
+  quit
+  read parm file -
+"paramstd.dat" -
+  noprint
+  energy parm dielectric 1 nodist -
+   listupdate 10 -
+    cutoff 12 hmass 5
+  energy rescutoff byatom all
+  zonecons auto
+  energy constraints bonds hydrogens
+QUIT
+
+if @n@ eq 1
+DYNAMICS
+  read restart coordinates formatted file "md-in.rst"
+  input target temperature @temperature@
+  input cntl initialize temperature at @temperature@
+QUIT
+endif
+
+if @n@ gt 1
+DYNAMICS
+  read restart coordinates and velocities formatted file "md-in.rst"
+QUIT
+endif
+
+DYNAMICS
+  input cntl nstep 50000 delt 0.001
+  input cntl constant temperature langevin relax 1.0
+  input target temperature @temperature@
+  input cntl nprnt 10000
+  input cntl tol 1.00000e-07
+  input cntl statistics off
+  run rrespa fast 4
+  write restart coordinates and velocities formatted file "md-out.rst"
+  write sql file "md-out.dms" name species1
+QUIT
+
+END

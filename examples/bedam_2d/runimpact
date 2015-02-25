@@ -1,0 +1,8 @@
+#!/bin/bash
+export SCHRODINGER=/home/u15684/schrod/bison/b3
+export IMP_ROOT=$SCHRODINGER/impact-v59015
+export MMSHARE_EXEC=$SCHRODINGER/mmshare-v22015/bin/Linux-x86_64
+export IMPACT_EXEC=$SCHRODINGER/impact-v59015/bin/Linux-x86_64
+export LD_LIBRARY_PATH=$SCHRODINGER/mmshare-v22015/lib/Linux-x86_64:$LD_LIBRARY_PATH
+export OMP_NUM_THREADS=4
+$IMPACT_EXEC/main1m.e2 $1

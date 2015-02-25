@@ -1,0 +1,39 @@
+<file_info>
+    <name><OUTFILE_0/></name>
+    <generated_locally/>
+    <upload_when_present/>
+    <max_nbytes>5000000</max_nbytes>
+    <url><UPLOAD_URL/></url>
+</file_info>
+<file_info>
+    <name><OUTFILE_1/></name>
+    <generated_locally/>
+    <upload_when_present/>
+    <max_nbytes>5000000</max_nbytes>
+    <url><UPLOAD_URL/></url>
+</file_info>
+<file_info>
+    <name><OUTFILE_2/></name>
+    <generated_locally/>
+    <upload_when_present/>
+    <max_nbytes>5000000</max_nbytes>
+    <url><UPLOAD_URL/></url>
+</file_info>
+<result>
+    <file_ref>
+        <file_name><OUTFILE_0/></file_name>
+        <open_name>md.out</open_name>
+        <copy_file/>
+    </file_ref>
+   <file_ref>
+        <file_name><OUTFILE_1/></file_name>
+        <open_name>md-out.dms</open_name>
+        <copy_file/>
+    </file_ref>
+   <file_ref>
+        <file_name><OUTFILE_2/></file_name>
+        <open_name>md-out.rst</open_name>
+        <copy_file/>
+    </file_ref>
+</result>
+

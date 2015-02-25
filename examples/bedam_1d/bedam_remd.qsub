@@ -1,0 +1,19 @@
+#!/bin/bash
+###PBS -q normal
+###PBS -A TG-MCB100145
+#PBS -l nodes=8
+#PBS -l walltime=04:00:00
+#PBS -V
+
+cd $PBS_O_WORKDIR
+
+# activate virtualenv
+module load python
+source $HOME/env/bin/activate
+
+export OMP_NUM_THREADS=1
+
+cat $PBS_NODEFILE > nodefile
+
+export ASYNC_RE_HOME=$HOME/utils/async_re
+python $ASYNC_RE_HOME/bedamtempt_async_re.py bedam_remd.cntl

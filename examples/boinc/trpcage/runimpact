@@ -1,0 +1,26 @@
+#!/bin/bash
+app="main1m"
+wdir=$1
+job=$2
+repl=$3
+cycle=$4
+cyclem1=`expr ${cycle} - 1`
+
+id=`cat /proc/sys/kernel/random/uuid`
+
+#main dms file, assume it has been staged in at setup time
+maindms=${job}.dms
+
+inpfilesrc=${wdir}/${job}_${cycle}.inp
+inpfiledest=${job}_r${repl}_c${cycle}_${id}.inp
+
+rstfilesrc=${wdir}/${job}_${cyclem1}.rst
+rstfiledest=${job}_r${repl}_c${cyclem1}_${id}.rst
+
+#echo "bin/stage_file_v2 $inpfilesrc $inpfiledest"
+bin/stage_file_v2 $inpfilesrc $inpfiledest
+#echo "bin/stage_file_v2  $rstfilesrc $rstfiledest"
+bin/stage_file_v2 $rstfilesrc $rstfiledest
+#echo "bin/create_work --appname main1m -wu_name ${job}_r${repl}_c${cycle}_${id} $inpfiledest paramstd.dat agbnp2.param $maindms $rstfiledest"
+wuname="${job}_r${repl}_c${cycle}_${id}"
+bin/create_work_v2 --appname main1m -wu_name "$wuname" $inpfiledest paramstd.dat agbnp2.param $maindms $rstfiledest
