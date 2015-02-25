@@ -143,7 +143,7 @@ class async_re(object):
             if self.keywords.get('NODEFILE') is None:
                 self._exit("NODEFILE needs to be specified")
             nodefile = self.keywords.get('NODEFILE')
-            self.multiarch = False	
+            self.multiarch = False
             if self.keywords.get('MULTIARCH') is None:
                self.multiarch = False
             elif self.keywords.get('MULTIARCH').lower() == 'yes':
@@ -165,15 +165,15 @@ class async_re(object):
                       node = f.readline()
                   f.close()
                except:
-                  self._exit("Unable to process nodefile %s" % nodefile) 
+                  self._exit("Unable to process nodefile %s" % nodefile)
                # reset job transport
                self.transport = None
             else:
 
                """
-               check the information in the nodefile. there should be six columns in the  
+               check the information in the nodefile. there should be six columns in the
                nodefile
-               they are 'node name', 'slot number', 'number of threads', 
+               they are 'node name', 'slot number', 'number of threads',
                'system architect','username',
                and 'name of the temperary folder'
                """
@@ -223,7 +223,7 @@ class async_re(object):
         else:
             self._exit("unknown value for exchange switch %s" % self.exchange)
 
-       # exchange by set or not, switch added for evaluting different REMD scheme 
+       # exchange by set or not, switch added for evaluting different REMD scheme
         self.exchangeBySet = True
         if self.keywords.get('EXCHANGE_BYSET') is None:
             self.exchangeBySet = True
@@ -232,9 +232,9 @@ class async_re(object):
         elif self.keywords.get('EXCHANGE_BYSET').lower() == 'no':
             self.exchangeBySet = False
         else:
-	    self._exit("unknown value for exchange by set %s" % self.exchangeBySet)
+            self._exit("unknown value for exchange by set %s" % self.exchangeBySet)
 
-       # exchange method, switch added for evaluting different REMD scheme 
+       # exchange method, switch added for evaluting different REMD scheme
         self.exchangeMethod = 'restrained_gibbs'
         if self.keywords.get('EXCHANGE_METHOD') is None:
             self.exchangeMethod = 'restrained_gibbs'
@@ -243,7 +243,7 @@ class async_re(object):
         elif self.keywords.get('EXCHANGE_METHOD').lower() == 'pairwise_metropolis':
             self.exchangeMethod = 'pairwise_metropolis'
         else:
-            self._exit("unknown exchange method %s" % self.exchangeMethod)           
+            self._exit("unknown exchange method %s" % self.exchangeMethod)
 
         # execution time in minutes
         self.walltime = float(self.keywords.get('WALL_TIME'))
@@ -323,7 +323,7 @@ class async_re(object):
             # creates SSH transport
             self.transport = ssh_transport(self.basename, self.compute_nodes, self.nreplicas,self.multiarch)
         elif self.transport_mechanism == "BOINC":
-	    from boinc_transport import boinc_transport
+            from boinc_transport import boinc_transport
 
             # creates BOINC transport
             self.transport = boinc_transport(self.basename, self.keywords, self.nreplicas, self.extfiles)
@@ -408,7 +408,7 @@ class async_re(object):
                     cycle_time - 10)
         while time.time() < end_time:
             # comment out by Junchao to set the minimum time
-            # time.sleep(1)       
+            # time.sleep(1)
 
             self.updateStatus()
             self.print_status()
@@ -419,7 +419,7 @@ class async_re(object):
             self.transport.ProcessJobQueue(min_time,cycle_time)
 
             self.updateStatus()
-            self.print_status() 
+            self.print_status()
             if self.exchange:
                 self.doExchanges()
         self.updateStatus()
@@ -592,48 +592,48 @@ class async_re(object):
         for reps in range(mreps):
             if self.exchangeBySet:
                 for repl_i in replicas_to_exchange:
-                    sid_i = self.status[repl_i]['stateid_current'] 
-                    curr_states = [self.status[repl_j]['stateid_current'] 
-                               for repl_j in replicas_to_exchange]
-	            if self.exchangeMethod == 'restrained_gibbs' :
-                       repl_j = pairwise_independence_sampling(repl_i,sid_i,
+                    sid_i = self.status[repl_i]['stateid_current']
+                    curr_states = [self.status[repl_j]['stateid_current']
+                                   for repl_j in replicas_to_exchange]
+                    if self.exchangeMethod == 'restrained_gibbs' :
+                        repl_j = pairwise_independence_sampling(repl_i,sid_i,
                                                         replicas_to_exchange,
                                                         curr_states,
                                                         swap_matrix)
-                    elif self.exchangeMethod == 'pairwise_metropolis' :
-                       repl_j = pairwise_metropolis_sampling(repl_i,sid_i,
+                    elif self.exchangeMethod == 'pairwise_metropolis':
+                        repl_j = pairwise_metropolis_sampling(repl_i,sid_i,
                                                         replicas_to_exchange,
                                                         curr_states,
                                                         swap_matrix)
                     else :
-                       self._exit("unknown exchange method %s" % self.exchangeMethod)
+                        self._exit("unknown exchange method %s" % self.exchangeMethod)
                     if repl_j != repl_i:
-                       sid_i = self.status[repl_i]['stateid_current'] 
-                       sid_j = self.status[repl_j]['stateid_current']
-                       self.status[repl_i]['stateid_current'] = sid_j
-                       self.status[repl_j]['stateid_current'] = sid_i
-            else :
+                        sid_i = self.status[repl_i]['stateid_current']
+                        sid_j = self.status[repl_j]['stateid_current']
+                        self.status[repl_i]['stateid_current'] = sid_j
+                        self.status[repl_j]['stateid_current'] = sid_i
+            else:
                 repl_i = choice(replicas_to_exchange)
                 sid_i = self.status[repl_i]['stateid_current']
                 curr_states = [self.status[repl_j]['stateid_current']
                                for repl_j in replicas_to_exchange]
                 if self.exchangeMethod == 'pairwise_metropolis':
-                   repl_j = pairwise_metropolis_sampling(repl_i,sid_i,
+                    repl_j = pairwise_metropolis_sampling(repl_i,sid_i,
                                                         replicas_to_exchange,
                                                         curr_states,
                                                         swap_matrix)
                 elif self.exchangeMethod == 'restrained_gibbs' :
-                   repl_j = pairwise_independence_sampling(repl_i,sid_i,
+                    repl_j = pairwise_independence_sampling(repl_i,sid_i,
                                                         replicas_to_exchange,
                                                         curr_states,
                                                         swap_matrix)
-                else :
-                   self._exit("unknown exchange method %s" % self.exchangeMethod)
+                else:
+                    self._exit("unknown exchange method %s" % self.exchangeMethod)
                 if repl_j != repl_i:
-                   sid_i = self.status[repl_i]['stateid_current']
-                   sid_j = self.status[repl_j]['stateid_current']
-                   self.status[repl_i]['stateid_current'] = sid_j
-                   self.status[repl_j]['stateid_current'] = sid_i
+                    sid_i = self.status[repl_i]['stateid_current']
+                    sid_j = self.status[repl_j]['stateid_current']
+                    self.status[repl_i]['stateid_current'] = sid_j
+                    self.status[repl_j]['stateid_current'] = sid_i
 
 
         # Uncomment to debug Gibbs sampling:

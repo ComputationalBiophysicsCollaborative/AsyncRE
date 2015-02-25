@@ -199,3 +199,5 @@ with boinc there's no queue to process. Just wait until maxtime
         else:
             return self.replica_status[wuid]
 
+if __name__ == "__main__":
+    pass

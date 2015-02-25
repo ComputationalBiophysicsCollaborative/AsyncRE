@@ -26,9 +26,9 @@ class ssh_transport(Transport):
         # names of compute nodes (slots)
         self.compute_nodes = compute_nodes #changed on 12/1/14
         self.nprocs = len(self.compute_nodes)
-	
-	self.multiarch = multiarch
-#	self.arch_system = compute_nodes[	#changed 12/1/14
+
+        self.multiarch = multiarch
+        # self.arch_system = compute_nodes[    #changed 12/1/14
 
         # node status = None if idle
         # Otherwise a structure containing:
@@ -84,35 +84,35 @@ class ssh_transport(Transport):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(job['nodename']) #,username=job['username'],password=None)
-	print "SSH connection establised to %s" %job['nodename']
-    
-        if (self.multiarch) :     	
-           if job["remote_working_directory"]:
-              mkdir_command = "mkdir -p %s" % job['remote_working_directory']
-              stdin, stdout, stderr = ssh.exec_command(mkdir_command)
-              output = stdout.read()
-              error = stderr.read()
-              stdin.close()
-              stdout.close()
-              stderr.close()
-              scpt = scp.SCPClient(ssh.get_transport())
-              for filename in job["exec_files"]:
-                  local_file = filename
-                  remote_file = job["remote_working_directory"] + "/"
-	          print "scp %s %s" % (local_file, remote_file)
-                  scpt.put(local_file, remote_file)
-	      for filename in job["job_input_files"]:
-                  local_file = job["working_directory"] + "/" + filename
-                  remote_file = job["remote_working_directory"] + "/" + filename
-                  scpt.put(local_file, remote_file)
+        print "SSH connection establised to %s" %job['nodename']
 
-              chmod_command = "chmod -R 777 %s" % job['remote_working_directory']
-              stdin, stdout, stderr = ssh.exec_command(chmod_command)
-              output = stdout.read()
-              error = stderr.read()
-              stdin.close()
-              stdout.close()
-              stderr.close()
+        if self.multiarch:
+            if job["remote_working_directory"]:
+                mkdir_command = "mkdir -p %s" % job['remote_working_directory']
+                stdin, stdout, stderr = ssh.exec_command(mkdir_command)
+                output = stdout.read()
+                error = stderr.read()
+                stdin.close()
+                stdout.close()
+                stderr.close()
+                scpt = scp.SCPClient(ssh.get_transport())
+                for filename in job["exec_files"]:
+                    local_file = filename
+                    remote_file = job["remote_working_directory"] + "/"
+                    print "scp %s %s" % (local_file, remote_file)
+                    scpt.put(local_file, remote_file)
+                for filename in job["job_input_files"]:
+                    local_file = job["working_directory"] + "/" + filename
+                    remote_file = job["remote_working_directory"] + "/" + filename
+                    scpt.put(local_file, remote_file)
+
+                chmod_command = "chmod -R 777 %s" % job['remote_working_directory']
+                stdin, stdout, stderr = ssh.exec_command(chmod_command)
+                output = stdout.read()
+                error = stderr.read()
+                stdin.close()
+                stdout.close()
+                stderr.close()
 
         stdin, stdout, stderr = ssh.exec_command(command)
         output = stdout.read()
@@ -122,24 +122,21 @@ class ssh_transport(Transport):
         stderr.close()
 
         if (self.multiarch) :
-           if job["remote_working_directory"]:
-              for filename in job["job_output_files"]:
-                  local_file = job["working_directory"] + "/" + filename
-                  remote_file = job["remote_working_directory"] + "/" + filename
-                  scpt.get(remote_file, local_file)
-              rmdir_command = "rm -rf %s" % job['remote_working_directory']
-              stdin, stdout, stderr = ssh.exec_command(rmdir_command)
-              stdin.close()
-              stdout.close()
-              stderr.close()
+            if job["remote_working_directory"]:
+                for filename in job["job_output_files"]:
+                    local_file = job["working_directory"] + "/" + filename
+                    remote_file = job["remote_working_directory"] + "/" + filename
+                    scpt.get(remote_file, local_file)
+                rmdir_command = "rm -rf %s" % job['remote_working_directory']
+                stdin, stdout, stderr = ssh.exec_command(rmdir_command)
+                stdin.close()
+                stdout.close()
+                stderr.close()
 
         job['output_queue'].put(output)
         job['error_queue'].put(error)
-       
+
         ssh.close()
-
-
-
 
     def launchJob(self, replica, job_info):
         """
@@ -149,12 +146,12 @@ class ssh_transport(Transport):
         output_file = job_info["output_file"]
         error_file = job_info["error_file"]
         executable = job_info["executable"]
-        if (not self.multiarch) :
-           working_directory = job_info["working_directory"]
-           command = "cd %s ; %s %s > %s 2> %s " % (working_directory, executable, input_file, output_file, error_file)
-        else :  
-           command = "%s %s > %s 2> %s " % ( executable, input_file, output_file, error_file)
-        
+        if not self.multiarch:
+            working_directory = job_info["working_directory"]
+            command = "cd %s ; %s %s > %s 2> %s " % (working_directory, executable, input_file, output_file, error_file)
+        else:
+            command = "%s %s > %s 2> %s " % ( executable, input_file, output_file, error_file)
+
         output_queue = mp.Queue()
         error_queue = mp.Queue()
 
@@ -171,29 +168,29 @@ class ssh_transport(Transport):
 
         return self.jobqueue.qsize()
 
-#coprocessor test
+    #coprocessor test
     def ModifyCommand(self,job, command):
         nodename = job['nodename']
-	nodeN=job['nthreads']
-	slotN=job['nslots']
+        nodeN = job['nthreads']
+        slotN = job['nslots']
 
-	#add command to go to remote working directory
-	cd_to_command = "cd %s ; " % job["remote_working_directory"]
+        #add command to go to remote working directory
+        cd_to_command = "cd %s ; " % job["remote_working_directory"]
         #new_command = add_to_command + command
 
         mic_pattern = re.compile("mic0")
-	
-        if re.search(mic_pattern, nodename): 
-            offset = slotN*(nodeN/4)  #changed 12/2/14
+
+        if re.search(mic_pattern, nodename):
+            offset = slotN * (nodeN/4)  #changed 12/2/14
             add_to_command = "export KMP_PLACE_THREADS=6C,4T,%dO ; " % offset
-#           new_command = add_to_command + command
-	else:
-	    add_to_command = "export OMP_NUM_THREADS=%d;"% nodeN 
-#           new_command = add_
-	new_command = add_to_command + cd_to_command + command        
-	print new_command
+            # new_command = add_to_command + command
+        else:
+            add_to_command = "export OMP_NUM_THREADS=%d;"% nodeN
+            # new_command = add_
+            new_command = add_to_command + cd_to_command + command
+        print new_command
         return new_command
-#test end
+    #test end
 
     def ProcessJobQueue(self, mintime, maxtime):
         """
@@ -218,43 +215,43 @@ class ssh_transport(Transport):
 
                 # assign job to available node
                 job['nodeid'] = node
-                if (not self.multiarch) :
-                   job['nodename'] = self.compute_nodes[node]
-                   # get the shell command
-                   command = job['command']
-                else :
-                   job['nodename'] = self.compute_nodes[node]["node_name"]
-		   job['nthreads'] = int(self.compute_nodes[node]["threads_number"]) #changed 12/2/14
-	           job['nslots']   = int(self.compute_nodes[node]["slot_number"])    #changed 12/2/14
-                   job['username'] = self.compute_nodes[node]["user_name"]
-                   # get the shell command
-                   command = job['command']
-     	           #retrieve remote working directory of node
-		   job["remote_working_directory"] = self.compute_nodes[node]["tmp_folder"] + "/" + job["remote_replica_dir"]
-       
+                if not self.multiarch:
+                    job['nodename'] = self.compute_nodes[node]
+                    # get the shell command
+                    command = job['command']
+                else:
+                    job['nodename'] = self.compute_nodes[node]["node_name"]
+                    job['nthreads'] = int(self.compute_nodes[node]["threads_number"]) #changed 12/2/14
+                    job['nslots']   = int(self.compute_nodes[node]["slot_number"])    #changed 12/2/14
+                    job['username'] = self.compute_nodes[node]["user_name"]
+                    # get the shell command
+                    command = job['command']
+                     #retrieve remote working directory of node
+                    job["remote_working_directory"] = self.compute_nodes[node]["tmp_folder"] + "/" + job["remote_replica_dir"]
+
 #coprocessor test
-                   command=self.ModifyCommand(job,command)
+                    command=self.ModifyCommand(job,command)
 #test end
-	           if job["remote_working_directory"] and job['job_input_files']:
-                      for filename in job['job_input_files']:
-                          local_file = job["working_directory"] + "/" + filename
-                          remote_file = job["remote_working_directory"] + "/" + filename
-                          print local_file, remote_file
+                    if job["remote_working_directory"] and job['job_input_files']:
+                        for filename in job['job_input_files']:
+                            local_file = job["working_directory"] + "/" + filename
+                            remote_file = job["remote_working_directory"] + "/" + filename
+                            print local_file, remote_file
 
-	           if self.compute_nodes[node]["arch"]:
-	              architecture = self.compute_nodes[node]["arch"]
-                   else:
-	              architecture = ""
+                    if self.compute_nodes[node]["arch"]:
+                        architecture = self.compute_nodes[node]["arch"]
+                    else:
+                        architecture = ""
 
-	           exec_directory = job["exec_directory"]
-	           lib_directory = exec_directory + "/lib/" + architecture
-	           bin_directory  = exec_directory + "/bin/" + architecture
-	      
-                   job["exec_files"] = []
-	           for filename in os.listdir(lib_directory):
-		       job["exec_files"].append(lib_directory + "/" + filename)
-	   	   for filename in os.listdir(bin_directory):
-		       job["exec_files"].append(bin_directory + "/" + filename)
+                    exec_directory = job["exec_directory"]
+                    lib_directory = exec_directory + "/lib/" + architecture
+                    bin_directory  = exec_directory + "/bin/" + architecture
+
+                    job["exec_files"] = []
+                    for filename in os.listdir(lib_directory):
+                        job["exec_files"].append(lib_directory + "/" + filename)
+                    for filename in os.listdir(bin_directory):
+                        job["exec_files"].append(bin_directory + "/" + filename)
 
                 # launches job
                 processid = mp.Process(target=self._launchCmd, args=(command, job))
@@ -284,14 +281,15 @@ class ssh_transport(Transport):
 
     def isDone(self,replica,cycle):
         """
-          Checks if a replica completed a run.
+        Checks if a replica completed a run.
 
-          If a replica is done it clears the corresponding node.
-          Note that cycle is ignored by job transport. It is assumed that it is the latest cycle.
-          it's kept for argument compatibility with hasCompleted() elsewhere.
+        If a replica is done it clears the corresponding node.
+        Note that cycle is ignored by job transport. It is assumed that it is
+        the latest cycle.  it's kept for argument compatibility with
+        hasCompleted() elsewhere.
         """
         job = self.replica_to_job[replica]
-        if(job == None):
+        if job == None:
             # if job has been removed we assume that the replica is done
             return True
         else:

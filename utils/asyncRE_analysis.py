@@ -2,7 +2,7 @@
 """A module to analyze file-based asynchronous RE jobs
 See documentation in doc/ directory.
 
-Contributors: 
+Contributors:
 
 Junchao Xia <junchao.xia@temple.edu>
 
@@ -143,9 +143,9 @@ ze <- matrix(out$ze, nrow=1, ncol=m)
 -ze/bet
 dg <- (-ze[,m]+ze[,1])/bet
 
-# print out   
+# print out
 # printf <- function(...)print(sprintf(...))
-# 
+#
 write(dg,file="%s", ncolumns = 1, append = FALSE, sep = " ")
 
 # block bootstrap for free energies, note that proc.type="serial"
@@ -207,7 +207,7 @@ out <- uwham.r(label=label.cross, logQ=neg.pot,ufactormax=200,ufactormin=1)
 ze <- matrix(out$ze, nrow=mtempt, ncol=mlam)
 -ze/bet
 dg <- (-ze[,mlam]+ze[,1])/bet
-# print out   
+# print out
 # printf <- function(...)print(sprintf(...))
 # print
 write(dg,file="%s", ncolumns = mtempt, append = FALSE, sep = " ")
@@ -223,16 +223,16 @@ calculate the binding free engies at different time from the time series of bind
         lambdas_str = ' '
         for il in range(0,self.nlam-1):
             lambdas_str +=  self.lambdas[il] + ','
-        lambdas_str += self.lambdas[self.nlam-1]     
+        lambdas_str += self.lambdas[self.nlam-1]
         temps_str = ' '
         for it in range(0,self.ntemp-1):
             temps_str +=  self.temperatures[it] + ','
         temps_str += self.temperatures[self.ntemp-1]
-        
+
         if (self.ntemp == 1) :
             uwham_input = self.uwham1D % (datafile,lambdas_str,temps_str,deltGfile)
         else:
-            uwham_input = self.uwham2D % (datafile,lambdas_str,temps_str,deltGfile)         
+            uwham_input = self.uwham2D % (datafile,lambdas_str,temps_str,deltGfile)
         f = open(R_inpfile, 'w')
         f.write(uwham_input)
         f.close()
@@ -244,22 +244,22 @@ calculate the binding free engies at different time from the time series of bind
 
         for i in range(self.nbgn,self.nend+1):
             nhead = i*self.nfreq
-	    if (not self.cumulated):
-               ndata = self.ndata
-               ntail = self.ndata
+            if (not self.cumulated):
+                ndata = self.ndata
+                ntail = self.ndata
             else:
-               ndata = i*self.nfreq
-               ntail = i*self.nfreq
+                ndata = i*self.nfreq
+                ntail = i*self.nfreq
 
             for ir in range(0,self.nreplicas):
                 inpf = "r%d/lbe.dat" %ir
                 outf = "r%d/lbe_temp.dat" %ir
-                lbe_cmd = 'head -n ' + str(nhead) + ' ' + inpf + '| tail -n ' + str(ntail) + ' > ' + outf 
+                lbe_cmd = 'head -n ' + str(nhead) + ' ' + inpf + '| tail -n ' + str(ntail) + ' > ' + outf
                 os.system(lbe_cmd)
                 if (ir == 0 ):
                     tmp_cmd = 'cat ' + outf + '> lbe_temp.dat';
                 else:
-                    tmp_cmd = 'cat ' + outf + '>> lbe_temp.dat'; 
+                    tmp_cmd = 'cat ' + outf + '>> lbe_temp.dat';
                 os.system(tmp_cmd)
             uwham_cmd = 'R CMD BATCH ' + R_inpfile + '>& uwham_async.Rout'
             os.system(uwham_cmd)
@@ -281,11 +281,11 @@ if __name__ == '__main__':
 
     # Parse arguments:
     usage = "%prog <ConfigFile>"
-    
+
     if len(sys.argv) != 2:
         print "Please specify ONE input file"
         sys.exit(1)
-    
+
     commandFile = sys.argv[1]
 
     print ""
@@ -301,4 +301,4 @@ if __name__ == '__main__':
     async_analy = asyncRE_analysis(commandFile, options=None)
 
     if (async_analy.BindFreeEng) :
-        async_analy.calculateBindFreeEng() 
+        async_analy.calculateBindFreeEng()

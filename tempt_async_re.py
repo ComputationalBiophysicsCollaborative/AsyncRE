@@ -34,17 +34,17 @@ class tempt_async_re_job(impact_job):
 
     def _buildInpFile(self, replica):
         """
-Builds input file for a BEDAM replica based on template input file
-BASENAME.inp for the specified replica at lambda=lambda[stateid] for the
-specified cycle.
-"""
+        Builds input file for a BEDAM replica based on template input file
+        BASENAME.inp for the specified replica at lambda=lambda[stateid] for the
+        specified cycle.
+        """
         basename = self.basename
         stateid = self.status[replica]['stateid_current']
         cycle = self.status[replica]['cycle_current']
 
         template = "%s.inp" % basename
         inpfile = "r%d/%s_%d.inp" % (replica, basename, cycle)
-        
+
         temperature = self.stateparams[stateid]['temperature']
         # read template buffer
         tfile = self._openfile(template, "r")
@@ -69,33 +69,33 @@ specified cycle.
 
     def _doExchange_pair(self,repl_a,repl_b):
         """
-Performs exchange of lambdas for BEDAM replica exchange.        
-"""
+        Performs exchange of lambdas for BEDAM replica exchange.
+        """
         kb = 0.0019872041
 
         cycle_a = self.status[repl_a]['cycle_current']
         sid_a = self.status[repl_a]['stateid_current']
         temperature_a = float(self.stateparams[sid_a]['temperature'])
-#       u_a: binding energy of replica a
-#       h_a: total energy of replica a (includes kinetic energy as we are not
-#            doing velocity rescaling here)
+        # u_a: binding energy of replica a
+        # h_a: total energy of replica a (includes kinetic energy as we are not
+        #      doing velocity rescaling here)
         (u_a,h_a) = self._extractLast_BindingEnergy_TotalEnergy(repl_a,cycle_a)
         (u_a,h_a) = (float(u_a),float(h_a))
 
-        cycle_b = self.status[repl_b]['cycle_current'] 
+        cycle_b = self.status[repl_b]['cycle_current']
         sid_b = self.status[repl_b]['stateid_current']
         lambda_b = float(self.stateparams[sid_b]['lambda'])
         temperature_b = float(self.stateparams[sid_b]['temperature'])
         (u_b,h_b) = self._extractLast_TotalEnergy(repl_b,cycle_b)
         (u_b,h_b) = (float(u_b),float(h_b))
 
-# Acceptance criterion is based on exp(-Delta) where
-#  Delta = -(beta_b - beta_a)*[H_b-H_a] - (lmbd_b - lmbd_a)[beta_a*u_b-beta_b*u_a] 
-# To derive this start from the Boltzmann weight exp[-F(x|lambda,beta)] where
-# F(x|lambda,beta) = beta*[H_0(x)+lambda*u(x)], set up the usual Metropolis
-# exchange rules noticing that:
-# H_b(x_a) = H_a(x_a) + (lmbd_b - lmbd_a)*u(x_a)
-#
+        # Acceptance criterion is based on exp(-Delta) where
+        #  Delta = -(beta_b - beta_a)*[H_b-H_a] - (lmbd_b - lmbd_a)[beta_a*u_b-beta_b*u_a]
+        # To derive this start from the Boltzmann weight exp[-F(x|lambda,beta)]
+        # where F(x|lambda,beta) = beta*[H_0(x)+lambda*u(x)], set up the usual
+        # Metropolis exchange rules noticing that:
+        #  H_b(x_a) = H_a(x_a) + (lmbd_b - lmbd_a)*u(x_a)
+
         beta_a = 1./(kb*temperature_a)
         beta_b = 1./(kb*temperature_b)
         dl = lambda_b - lambda_a
@@ -125,11 +125,12 @@ Performs exchange of lambdas for BEDAM replica exchange.
 
     def _getImpactData(self, file):
         """
-Override because with T-RE there are only 2 lines of data printed in the output file.
+        Override because with T-RE there are only 2 lines of data printed in the
+        output file.
 
-Reads all of the Impact simulation data values temperature, energies, etc.
-at each time step and puts into a big table
-"""
+        Reads all of the Impact simulation data values temperature, energies,
+        etc.  at each time step and puts into a big table
+        """
         if not os.path.exists(file):
             msg = 'File does not exist: %s' % file
             self._exit(msg)
@@ -140,9 +141,9 @@ at each time step and puts into a big table
         f = self._openfile(file ,"r")
         line = f.readline()
         while line:
-            # fast forward until we get to the line: 
+            # fast forward until we get to the line:
             # "Step number: ... "
-            while line and not re.match(step_line, line): 
+            while line and not re.match(step_line, line):
                 line = f.readline()
             # read the step number
             if re.match(step_line, line):
@@ -167,8 +168,8 @@ at each time step and puts into a big table
 
     def _extractLast_TotalEnergy(self,repl,cycle):
         """
-Extracts binding energy from Impact output
-"""
+        Extracts binding energy from Impact output
+        """
         output_file = "r%s/%s_%d.out" % (repl,self.basename,cycle)
         datai = self._getImpactData(output_file)
         nf = len(datai[0])
@@ -181,12 +182,12 @@ Extracts binding energy from Impact output
 
     def print_status(self):
         """
-Writes to BASENAME_stat.txt a text version of the status of the RE job
+        Writes to BASENAME_stat.txt a text version of the status of the RE job
 
-It's fun to follow the progress in real time by doing:
+        It's fun to follow the progress in real time by doing:
 
-watch cat BASENAME_stat.txt
-"""
+        watch cat BASENAME_stat.txt
+        """
         logfile = "%s_stat.txt" % self.basename
         ofile = self._openfile(logfile,"w")
         log = "Replica  State   Temperature Status  Cycle \n"
@@ -222,11 +223,11 @@ if __name__ == '__main__':
 
     # Parse arguments:
     usage = "%prog <ConfigFile>"
-    
+
     if len(sys.argv) != 2:
         print "Please specify ONE input file"
         sys.exit(1)
-    
+
     commandFile = sys.argv[1]
 
     print ""

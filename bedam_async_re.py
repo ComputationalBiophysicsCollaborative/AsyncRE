@@ -41,10 +41,10 @@ class bedam_async_re_job(impact_job):
 
     def _buildInpFile(self, replica):
         """
-Builds input file for a BEDAM replica based on template input file
-BASENAME.inp for the specified replica at lambda=lambda[stateid] for the
-specified cycle.
-"""
+        Builds input file for a BEDAM replica based on template input file
+        BASENAME.inp for the specified replica at lambda=lambda[stateid] for the
+        specified cycle.
+        """
         basename = self.basename
         stateid = self.status[replica]['stateid_current']
         cycle = self.status[replica]['cycle_current']
@@ -72,18 +72,18 @@ specified cycle.
         ofile = self._openfile("r%d/state.history" % replica, "a")
         ofile.write("%d %d %s\n" % (cycle, stateid, lambd))
         ofile.close()
-        
+
 
     def _doExchange_pair(self,repl_a,repl_b):
         """
-Performs exchange of lambdas for BEDAM replica exchange.        
-"""
+        Performs exchange of lambdas for BEDAM replica exchange.
+        """
         cycle_a = self.status[repl_a]['cycle_current']
         sid_a = self.status[repl_a]['stateid_current']
         lambda_a = self.lambdas[sid_a]
         u_a = self._extractLast_BindingEnergy(repl_a,cycle_a)
 
-        cycle_b = self.status[repl_b]['cycle_current'] 
+        cycle_b = self.status[repl_b]['cycle_current']
         sid_b = self.status[repl_b]['stateid_current']
         lambda_b = self.lambdas[sid_b]
         u_b = self._extractLast_BindingEnergy(repl_b,cycle_b)
@@ -113,8 +113,8 @@ Performs exchange of lambdas for BEDAM replica exchange.
 
     def _extractLast_BindingEnergy(self,repl,cycle):
         """
-Extracts binding energy from Impact output
-"""
+        Extracts binding energy from Impact output
+        """
         output_file = "r%s/%s_%d.out" % (repl,self.basename,cycle)
         datai = self._getImpactData(output_file)
         nf = len(datai[0])
@@ -140,11 +140,11 @@ if __name__ == '__main__':
 
     # Parse arguments:
     usage = "%prog <ConfigFile>"
-    
+
     if len(sys.argv) != 2:
         print "Please specify ONE input file"
         sys.exit(1)
-    
+
     commandFile = sys.argv[1]
 
     print ""
