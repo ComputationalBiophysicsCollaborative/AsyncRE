@@ -31,24 +31,24 @@ class impact_job(async_re):
             local_working_directory = os.getcwd() + "/r" + str(replica)
 
             remote_replica_dir = "%s_r%d_c%d" % (self.basename, replica, cycle)
-
-#        self.compute_nodes=compute_nodes
-
-#         nodeid=self.transport._availableNode()
-
+#
+#            self.compute_nodes=compute_nodes
+#
+#            nodeid=self.transport._availableNode()
+#
 #            if self.keywords.get('REMOTE_WORK_DIR'):
-#               wdir = self.keywords.get('REMOTE_WORK_DIR')
-#               replica_dir = "%s_r%d_c%d" % (self.basename, replica, cycle)
-#               remote_working_directory = wdir + "/" + replica_dir
-#         else:
-#            wdir = None
-#            remote_working_directory = None
-
-#            if self.keywords.get('REMOTE_WORK_DIR') is None: #remote_working_directory is None:
-#               executable = os.getcwd() + "/runimpact"
+#                wdir = self.keywords.get('REMOTE_WORK_DIR')
+#                replica_dir = "%s_r%d_c%d" % (self.basename, replica, cycle)
+#                remote_working_directory = wdir + "/" + replica_dir
 #            else:
-#               executable = remote_working_directory + "/runimpact"
-
+#                wdir = None
+#                remote_working_directory = None
+#
+#            if self.keywords.get('REMOTE_WORK_DIR') is None: #remote_working_directory is None:
+#                executable = os.getcwd() + "/runimpact"
+#            else:
+#                executable = remote_working_directory + "/runimpact"
+#
             executable = "./runimpact"
 
             job_info = {
@@ -63,19 +63,19 @@ class impact_job(async_re):
                 "exec_directory": None}
 
 
-        # detect if the remote directory (tmp_folder) is setup, if so, copy
-        # all the required files from lib_directory to tmp folder //12/2/2014
-#        job_info["remote_working_directory"]=self.compute_nodes[nodeid]["tmp_folder"]
+            # detect if the remote directory (tmp_folder) is setup, if so, copy
+            # all the required files from lib_directory to tmp folder //12/2/2014
+#            job_info["remote_working_directory"]=self.compute_nodes[nodeid]["tmp_folder"]
 
 
 
-        # detect which kind of architecture the node use, then choosing
-        # different library files and binary files in different lib and bin
-        # folders
-        if self.keywords.get('EXEC_DIRECTORY'):
-            exec_directory = self.keywords.get('EXEC_DIRECTORY')
-        else:
-            exec_directory = os.getcwd()
+            # detect which kind of architecture the node use, then choosing
+            # different library files and binary files in different lib and bin
+            # folders
+            if self.keywords.get('EXEC_DIRECTORY'):
+                exec_directory = self.keywords.get('EXEC_DIRECTORY')
+            else:
+                exec_directory = os.getcwd()
 
             job_info["exec_directory"]=exec_directory
 

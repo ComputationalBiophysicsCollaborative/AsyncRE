@@ -145,73 +145,70 @@ class async_re(object):
             nodefile = self.keywords.get('NODEFILE')
             self.multiarch = False
             if self.keywords.get('MULTIARCH') is None:
-               self.multiarch = False
+                self.multiarch = False
             elif self.keywords.get('MULTIARCH').lower() == 'yes':
-               self.multiarch = True
+                self.multiarch = True
             elif self.keywords.get('MULTIARCH').lower() == 'no':
-               self.multiarch = False
+                self.multiarch = False
             else:
                 self._exit("unknown value for multiarch switch %s" % self.multiarch)
 
-            if (not self.multiarch):
-               self.nprocs = 0
-               self.compute_nodes = []
-               try:
-                  f = open(nodefile, 'r')
-                  node = f.readline()
-                  while node:
-                      self.compute_nodes.append(node.strip())
-                      self.nprocs += 1
-                      node = f.readline()
-                  f.close()
-               except:
-                  self._exit("Unable to process nodefile %s" % nodefile)
-               # reset job transport
-               self.transport = None
+            if not self.multiarch:
+                self.nprocs = 0
+                self.compute_nodes = []
+                try:
+                    f = open(nodefile, 'r')
+                    node = f.readline()
+                    while node:
+                        self.compute_nodes.append(node.strip())
+                        self.nprocs += 1
+                        node = f.readline()
+                    f.close()
+                except:
+                    self._exit("Unable to process nodefile %s" % nodefile)
+                # reset job transport
+                self.transport = None
             else:
+                # check the information in the nodefile. there should be six
+                # columns in the nodefile
+                # they are 'node name', 'slot number', 'number of threads',
+                # 'system architect','username',
+                # and 'name of the temperary folder'
+                node_info = []
+                try:
+                    f = open(nodefile, 'r')
+                    line = f.readline()
+                    nodeid = 0
+                    while line:
+                        lineID = line.split(",")
+                        node_info.append({})
+                        node_info[nodeid]["node_name"] = str(lineID[0].strip())
+                        node_info[nodeid]["slot_number"] = str(lineID[1].strip())
+                        node_info[nodeid]["threads_number"] = str(lineID[2].strip())
+                        node_info[nodeid]["arch"] = str(lineID[3].strip())
+                        node_info[nodeid]["user_name"] = str(lineID[4].strip())
+                        node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
 
-               """
-               check the information in the nodefile. there should be six columns in the
-               nodefile
-               they are 'node name', 'slot number', 'number of threads',
-               'system architect','username',
-               and 'name of the temperary folder'
-               """
-               node_info= []
-               try:
-                  f = open(nodefile, 'r')
-                  line=f.readline()
-                  nodeid = 0
-                  while line:
-                      lineID=line.split(",")
-                      node_info.append({})
-                      node_info[nodeid]["node_name"] = str(lineID[0].strip())
-                      node_info[nodeid]["slot_number"] = str(lineID[1].strip())
-                      node_info[nodeid]["threads_number"] = str(lineID[2].strip())
-                      node_info[nodeid]["arch"] = str(lineID[3].strip())
-                      node_info[nodeid]["user_name"] = str(lineID[4].strip())
-                      node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
+                        #tmp_folder has to be pre-assigned
+                        if node_info[nodeid]["tmp_folder"] == "":
+                            self._exit('tmp_folder in nodefile needs to be specified')
 
-                      #tmp_folder has to be pre-assigned
-                      if node_info[nodeid]["tmp_folder"] == "":
-                         self._exit('tmp_folder in nodefile needs to be specified')
+                        nodeid += 1
+                        line = f.readline()
 
-                      nodeid+=1
-                      line=f.readline()
+                    f.close()
 
-                  f.close()
+                except:
+                    self._exit("Unable to process nodefile %s" % nodefile)
 
-               except:
-                  self._exit("Unable to process nodefile %s" % nodefile)
+                # reset job transport
+                self.transport = None
+                #set the nodes information
+                self.compute_nodes=node_info
+                #test the information
+                print self.compute_nodes
 
-               # reset job transport
-               self.transport = None
-               #set the nodes information
-               self.compute_nodes=node_info
-               #test the information
-               print self.compute_nodes
-
-       # exchange or not, switch added for WCG by Junchao
+        # exchange or not, switch added for WCG by Junchao
 
         self.exchange = True
         if self.keywords.get('EXCHANGE') is None:
@@ -223,7 +220,7 @@ class async_re(object):
         else:
             self._exit("unknown value for exchange switch %s" % self.exchange)
 
-       # exchange by set or not, switch added for evaluting different REMD scheme
+        # exchange by set or not, switch added for evaluting different REMD scheme
         self.exchangeBySet = True
         if self.keywords.get('EXCHANGE_BYSET') is None:
             self.exchangeBySet = True
@@ -234,7 +231,7 @@ class async_re(object):
         else:
             self._exit("unknown value for exchange by set %s" % self.exchangeBySet)
 
-       # exchange method, switch added for evaluting different REMD scheme
+        # exchange method, switch added for evaluting different REMD scheme
         self.exchangeMethod = 'restrained_gibbs'
         if self.keywords.get('EXCHANGE_METHOD') is None:
             self.exchangeMethod = 'restrained_gibbs'
@@ -430,7 +427,7 @@ class async_re(object):
     def waitJob(self):
         # wait until all jobs are complete
         completed = False
-        while(not completed):
+        while not completed:
             self.updateStatus()
             completed = True
             for k in range(self.nreplicas):
@@ -439,7 +436,7 @@ class async_re(object):
             time.sleep(1)
 
     def cleanJob(self):
-        None
+        return
 
     def _write_status(self):
         """
