@@ -21,6 +21,7 @@ import time
 import pickle
 import random
 import shutil
+import logging, logging.config
 
 from configobj import ConfigObj
 
@@ -64,10 +65,14 @@ class async_re(object):
     """
     Class to set up and run asynchronous file-based RE calculations
     """
+    logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "utils/logging.conf"))
+
     def __init__(self, command_file, options):
         self.command_file = command_file
         self.jobname = os.path.splitext(os.path.basename(command_file))[0]
         self.keywords = ConfigObj(self.command_file)
+
+        self._setLogger()
         self._checkInput()
         self._printStatus()
 
@@ -77,6 +82,9 @@ class async_re(object):
     def _openfile(self, name, mode, max_attempts = 100):
         f = _open(name,mode,max_attempts)
         return f
+
+    def _setLogger(self):
+        self.logger = logging.getLogger("async_re")
 
     def __getattribute__(self, name):
         if name == 'replicas_waiting':
@@ -111,10 +119,11 @@ class async_re(object):
 
     def _printStatus(self):
         """Print a report of the input parameters."""
-        print 'command_file =',self.command_file
-        print 'jobname =',self.jobname
+        self.logger.info("command_file = %s", self.command_file)
+        self.logger.info("jobname = %s", self.jobname)
+        self.logger.info("Keywords:")
         for k,v in self.keywords.iteritems():
-            print k,v
+            self.logger.info("%s: %s", k, v)
 
     def _checkInput(self):
         """
@@ -206,7 +215,71 @@ class async_re(object):
                 #set the nodes information
                 self.compute_nodes=node_info
                 #test the information
-                print self.compute_nodes
+                self.logger.info('Node info:')
+                for nodeid in node_info:
+                    for k, v in node_info[nodeid]:
+                        self.logger.info('Node %s  -  %s  -  %s', str(nodeid),
+                                         str(k), str(v))
+
+            # exchange or not, switch added for WCG by Junchao
+            if (not self.multiarch):
+               self.nprocs = 0
+               self.compute_nodes = []
+               try:
+                  f = open(nodefile, 'r')
+                  node = f.readline()
+                  while node:
+                      self.compute_nodes.append(node.strip())
+                      self.nprocs += 1
+                      node = f.readline()
+                  f.close()
+               except:
+                  self._exit("Unable to process nodefile %s" % nodefile)
+               # reset job transport
+               self.transport = None
+            else:
+
+               """
+               check the information in the nodefile. there should be six columns in the
+               nodefile
+               they are 'node name', 'slot number', 'number of threads',
+               'system architect','username',
+               and 'name of the temperary folder'
+               """
+               node_info= []
+               try:
+                  f = open(nodefile, 'r')
+                  line=f.readline()
+                  nodeid = 0
+                  while line:
+                      lineID=line.split(",")
+                      node_info.append({})
+                      node_info[nodeid]["node_name"] = str(lineID[0].strip())
+                      node_info[nodeid]["slot_number"] = str(lineID[1].strip())
+                      node_info[nodeid]["threads_number"] = str(lineID[2].strip())
+                      node_info[nodeid]["arch"] = str(lineID[3].strip())
+                      node_info[nodeid]["user_name"] = str(lineID[4].strip())
+                      node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
+
+                      #tmp_folder has to be pre-assigned
+                      if node_info[nodeid]["tmp_folder"] == "":
+                         self._exit('tmp_folder in nodefile needs to be specified')
+
+                      nodeid+=1
+                      line=f.readline()
+
+                  f.close()
+
+               except:
+                  self._exit("Unable to process nodefile %s" % nodefile)
+
+               # reset job transport
+               self.transport = None
+               #set the nodes information
+               self.compute_nodes=node_info
+               #test the information
+               self.logger.info("compute nodes: %s", ', '.join([n['node_name'] for
+                                                                n in node_info]))
 
         # exchange or not, switch added for WCG by Junchao
 
@@ -279,6 +352,8 @@ class async_re(object):
         # verbose printing
         if self.keywords.get('VERBOSE').lower() == 'yes':
             self.verbose = True
+            if self.logger:
+                self.logger.setLevel(logging.DEBUG)
         else:
             self.verbose = False
 
@@ -495,8 +570,8 @@ class async_re(object):
                 if self._hasCompleted(replica,this_cycle):
                     self.status[replica]['cycle_current'] += 1
                 else:
-                    print ('_updateStatus_replica(): Warning: restarting '
-                           'replica %d (cycle %d)'%(replica,this_cycle))
+                    self.logger.warning('_updateStatus_replica(): restarting replica %s (cycle %s)',
+                                        replica, this_cycle)
             self._buildInpFile(replica)
             self.status[replica]['running_status'] = 'W'
         else:
@@ -508,8 +583,8 @@ class async_re(object):
                     if self._hasCompleted(replica,this_cycle):
                         self.status[replica]['cycle_current'] += 1
                     else:
-                        print ('_updateStatus_replica(): Warning: restarting '
-                               'replica %d (cycle %d)'%(replica,this_cycle))
+                        self.logger.warning('_updateStatus_replica(): restarting replica %s (cycle %s)',
+                                            replica, this_cycle)
                     self._buildInpFile(replica)
                     self.status[replica]['running_status'] = 'W'
 
@@ -530,11 +605,11 @@ class async_re(object):
         nlaunch = self.waiting - max(2,self.nreplicas - max_njobs_submittable)
         nlaunch = max(0,nlaunch)
         if self.verbose:
-            print 'available_slots: %d'%available_slots
-            print 'max job queue size: %d'%max_njobs_submittable
-            print 'running/submitted subjobs: %d'%self.running
-            print 'waiting replicas: %d'%self.waiting
-            print 'replicas to launch: %d'%nlaunch
+            self.logger.debug('available_slots: %d', available_slots)
+            self.logger.debug('max job queue size: %d', max_njobs_submittable)
+            self.logger.debug('running/submitted subjobs: %d', self.running)
+            self.logger.debug('waiting replicas: %d', self.waiting)
+            self.logger.debug('replicas to launch: %d', nlaunch)
         return nlaunch
 
     def launchJobs(self):
@@ -547,8 +622,7 @@ class async_re(object):
             random.shuffle(wait)
             n = min(jobs_to_launch,len(wait))
             for k in wait[0:n]:
-                print ('Launching replica %d cycle %d'
-                       %(k,self.status[k]['cycle_current']))
+                self.logger.info('Launching replica %d cycle %d', k, self.status[k]['cycle_current'])
                 # the _launchReplica function is implemented by
                 # MD engine modules
                 status = self._launchReplica(k,self.status[k]['cycle_current'])
@@ -565,7 +639,7 @@ class async_re(object):
             return 0
 
         if self.verbose:
-            print 'Initiating exchanges amongst %d replicas:'%nreplicas_to_exchange
+            self.logger.debug('Initiating exchanges amongst %d replicas:', nreplicas_to_exchange)
 
         exchange_start_time = time.time()
         # backtrack cycle of waiting replicas
@@ -651,12 +725,13 @@ class async_re(object):
         total_time = time.time() - exchange_start_time
 
         if self.verbose:
-            print '------------------------------------------'
-            print 'Swap matrix computation time: %10.2f s'%matrix_time
-            print 'Gibbs sampling time         : %10.2f s'%sampling_time
-            print '------------------------------------------'
-            print 'Total exchange time         : %10.2f s'%total_time
-
+            fmt = '%30s: %10.2f s'
+            line = '-'*40
+            self.logger.debug(line)
+            self.logger.debug(fmt, 'Swap matrix computation time', matrix_time)
+            self.logger.debug(fmt, 'Gibbs sampling time', sampling_time)
+            self.logger.debug(line)
+            self.logger.debug(fmt, 'Total exchange time', total_time)
 
 
 #     def _check_remote_resource(self, resource_url):
@@ -724,15 +799,20 @@ class async_re(object):
         empirical = sample_to_state_perm_distribution(self.nperm,replicas,
                                                       states)
         exact = state_perm_distribution(replicas,states,U)
-        print '%8s %-9s %-9s %-s'%('','empirical','exact','state permutation')
-        print '-'*80
+        line = '-'*80
+        double_line = '='*80
+        fmt = '{0:>8} {0:>9.4f} {0:>9.4f} {}'
+
+        msg = ['\n{:>8} {:<9} {:<9} {}'.format('', 'empirical', 'exact', 'state permutation')]
+        msg.append(line)
         if len(empirical.keys()) > len(exact.keys()):
             perms = empirical.keys()
         else:
             perms = exact.keys()
         for k,perm in enumerate(perms):
-            print '%8d %9.4f %9.4f %s'%(k+1,empirical[perm],exact[perm],perm)
-        print '-'*80
+            msg.append(fmt.format(k+1, empirical[perm], exact[perm], perm))
+        msg.append(line)
         dkl = state_perm_divergence(empirical,exact)
-        print 'Kullback-Liebler Divergence = %f'%dkl
-        print '='*80
+        msg.append('Kullback-Liebler Divergence = {}'.format(dkl))
+        msg.append(double_line)
+        self.logger.debug(msg)

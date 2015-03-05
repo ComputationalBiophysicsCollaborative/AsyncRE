@@ -1,9 +1,15 @@
-import sys, time, random, math
+import sys
+import time
+import math
+import random
+import logging
 from async_re import async_re
 from impact_async_re import impact_job
 
 
 class bedam_async_re_job(impact_job):
+    def _setLogger(self):
+        self.logger = logging.getLogger("async_re.bedam_async_re")
 
     def _checkInput(self):
         async_re._checkInput(self)
@@ -93,23 +99,25 @@ class bedam_async_re_job(impact_job):
         delta = -dl*du
 
         if self.keywords.get('VERBOSE') == "yes":
-            print "Pair Info"
-            print "%d %s %s" % (repl_a, lambda_a, u_a)
-            print "%d %s %s" % (repl_b, lambda_b, u_b)
-            print "dl = %f du = %f delta = %f" % (dl,du,delta)
+            self.logger.info("Pair Info")
+            self.logger.info("%d %s %s", repl_a, lambda_a, u_a)
+            self.logger.info("%d %s %s", repl_b, lambda_b, u_b)
+            self.logger.info("dl = %f du = %f delta = %f", dl, du, delta)
 
         csi = random.random()
         if math.exp(-self.bedam_beta*delta) > csi:
+            status_func = lambda val: self.status[val]['stateid_current']
+
             if self.keywords.get('VERBOSE') == "yes":
-                print "Accepted %f %f" % (math.exp(-self.bedam_beta*delta),csi)
-                print (self.status[repl_a]['stateid_current'], self.status[repl_b]['stateid_current'])
+                self.logger.info("Accepted %f %f", math.exp(-self.bedam_beta*delta, csi))
+                self.logger.info("%s %s", status_func(repl_a), status_func(repl_b))
             self.status[repl_a]['stateid_current'] = sid_b
             self.status[repl_b]['stateid_current'] = sid_a
             if self.keywords.get('VERBOSE') == "yes":
-                print (self.status[repl_a]['stateid_current'], self.status[repl_b]['stateid_current'])
+                self.logger.info("%s %s", status_func(repl_a), status_func(repl_b))
         else:
             if self.keywords.get('VERBOSE') == "yes":
-                print "Rejected %f %f" % (math.exp(-self.bedam_beta*delta),csi)
+                self.logger.info("Rejected %f %f", math.exp(-self.bedam_beta*delta, csi))
 
     def _extractLast_BindingEnergy(self,repl,cycle):
         """

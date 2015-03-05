@@ -1,7 +1,14 @@
-import os, re, random, math
+import os
+import re
+import random
+import math
+import logging
 from async_re import async_re
 
 class impact_job(async_re):
+
+    def _setLogger(self):
+        self.logger = logging.getLogger("async_re.impact_async_re")
 
     def _launchReplica(self,replica,cycle): #changed 12/2/14
         """
@@ -102,10 +109,11 @@ class impact_job(async_re):
             job_info["job_output_files"] = job_output_files;
 
         if self.keywords.get('VERBOSE') == "yes":
+            msg = "_launchReplica(): Launching %s %s in directory %s cycle %d"
             if not self.multiarch:
-                print "_launchReplica(): Launching %s %s in directory %s cycle %d" % ( executable, input_file, working_directory, cycle)
+                self.logger.info(msg, executable, input_file, working_directory, cycle)
             else:
-                print "_launchReplica(): Launching %s %s in directory %s cycle %d" % ( executable, input_file, local_working_directory, cycle)
+                self.logger.info(msg, executable, input_file, working_directory, cycle)
 
         status = self.transport.launchJob(replica, job_info)
 
@@ -167,10 +175,10 @@ class impact_job(async_re):
             #check existence of rst file
             if not os.path.exists(rstfile):
                 if self.verbose:
-                    print "Warning: can not find file %s." % rstfile
+                    self.logger.warning("Cannot find file %s", rstfile)
                 return False
         except:
-            print "Error accessing file %s." % rstfile
+            self.logger.error("Error accessing file %s", rstfile)
             return False
 
         try:
@@ -180,10 +188,10 @@ class impact_job(async_re):
                 rstsize_p = os.path.getsize(rstfile_p)
                 if not rstsize == rstsize_p:
                     if self.verbose:
-                        print "Warning: files %s and %s have different size" % (rstfile,rstfile_p)
+                        self.logger.warning("Files %s and %s have different sizes", rstfile, rstfile_p)
                     return False
         except:
-            print "Error accessing file %s." % rstfile
+            self.logger.error("Error accessing file %s", rstfile)
             return False
 
         try:
@@ -193,7 +201,7 @@ class impact_job(async_re):
             nr = len(datai)
         except:
             if self.verbose:
-                print "Warning: unable to read/parse file %s." % output_file
+                self.logger.warning("Unable to read/parse file %s", output_file)
             return False
 
         return True
@@ -225,8 +233,9 @@ class impact_job(async_re):
             par.append(l)
             pot.append(v)
         if self.verbose:
-            print pot
-            print par
+            self.logger.info("Swap matrix info:")
+            self.logger.info("%s", ' '.join(map(str, pot)))
+            self.logger.info("%s", ' '.join(map(str, par)))
 
         for i in range(n):
             repl_i = replicas[i]

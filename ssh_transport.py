@@ -8,6 +8,7 @@ import time
 import random
 import paramiko
 import multiprocessing as mp
+import logging
 import Queue
 import scp
 
@@ -22,6 +23,7 @@ class ssh_transport(Transport):
         # compute_nodes: list of names of nodes in the pool
         # nreplicas: number of replicas, 0 ... nreplicas-1
         Transport.__init__(self) #WFF - 2/18/15
+        self.logger = logging.getLogger("async_re.ssh_transport") #WFF - 3/2/15
 
         # names of compute nodes (slots)
         self.compute_nodes = compute_nodes #changed on 12/1/14
@@ -52,7 +54,8 @@ class ssh_transport(Transport):
         try:
             job = self.replica_to_job[replica]
         except:
-            print "clear_resource(): unknown replica id %d" % (replica)
+            self.logger.warning("clear_resource(): unknown replica id %d",
+                                replcica)
 
         if job == None:
             return None
@@ -60,13 +63,13 @@ class ssh_transport(Transport):
         try:
             nodeid = job['nodeid']
         except:
-            print "clear_resource(): unable to query nodeid"
+            self.logger.warning("clear_resource(): unable to query nodeid")
             return None
 
         try:
             self.node_status[nodeid] = None
         except:
-            print "clear_resource(): unknown nodeid %d" % (nodeid)
+            self.logger.warning("clear_resource(): unknown nodeid %", nodeid)
             return None
 
         return nodeid
@@ -84,7 +87,7 @@ class ssh_transport(Transport):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(job['nodename']) #,username=job['username'],password=None)
-        print "SSH connection establised to %s" %job['nodename']
+        self.logger.info("SSH connection established to %s", job['nodename'])
 
         if self.multiarch:
             if job["remote_working_directory"]:
@@ -99,7 +102,7 @@ class ssh_transport(Transport):
                 for filename in job["exec_files"]:
                     local_file = filename
                     remote_file = job["remote_working_directory"] + "/"
-                    print "scp %s %s" % (local_file, remote_file)
+                    self.logger.info("scp %s %s", local_file, remote_file)
                     scpt.put(local_file, remote_file)
                 for filename in job["job_input_files"]:
                     local_file = job["working_directory"] + "/" + filename
@@ -188,7 +191,7 @@ class ssh_transport(Transport):
             add_to_command = "export OMP_NUM_THREADS=%d;"% nodeN
             # new_command = add_
             new_command = add_to_command + cd_to_command + command
-        print new_command
+        self.logger.info(new_command)
         return new_command
     #test end
 
@@ -236,7 +239,7 @@ class ssh_transport(Transport):
                         for filename in job['job_input_files']:
                             local_file = job["working_directory"] + "/" + filename
                             remote_file = job["remote_working_directory"] + "/" + filename
-                            print local_file, remote_file
+                            self.logger.info("%s %s", local_file, remote_file)
 
                     if self.compute_nodes[node]["arch"]:
                         architecture = self.compute_nodes[node]["arch"]
@@ -302,8 +305,8 @@ class ssh_transport(Transport):
                 # disconnects replica from job and node
                 self._clear_resource(replica)
 
-                print job['output_queue'].get()
-                print job['error_queue'].get()
+                self.logger.info("%s", job['output_queue'].get())
+                self.logger.info("%s", job['error_queue'].get())
 
                 job['output_queue'].close()
                 job['error_queue'].close()

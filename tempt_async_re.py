@@ -1,8 +1,18 @@
-import sys, time, os, re, random, math
+import os
+import sys
+import re
+import time
+import math
+import random
+import logging
 from async_re import async_re
 from impact_async_re import impact_job
 
 class tempt_async_re_job(impact_job):
+
+    def _setLogger(self):
+        self.logger = logging.getLogger('async_re.tempt_async_re')
+
 
     def _checkInput(self):
         async_re._checkInput(self)
@@ -105,23 +115,24 @@ class tempt_async_re_job(impact_job):
         delta = -dl*du - db*dh
 
         if self.keywords.get('VERBOSE') == "yes":
-            print "Pair Info"
-            print "%d %f %f %f %f" % (repl_a, lambda_a, u_a, beta_a, h_a)
-            print "%d %f %f %f %f" % (repl_b, lambda_b, u_b, beta_b, h_b)
-            print "dl = %f du = %f dh = %f delta = %f" % (dl,du,dh,delta)
+            self.logger.info("Pair Info")
+            self.logger.info("%d %f %f %f %f", repl_a, lambda_a, u_a, beta_a, h_a)
+            self.logger.info("%d %f %f %f %f", repl_b, lambda_b, u_b, beta_b, h_b)
+            self.logger.info("dl = %f du = %f dh = %f delta = %f", dl, du, dh, delta)
 
         csi = random.random()
         if math.exp(-delta) > csi:
+            status_func = lambda val: self.status[val]['stateid_current']
             if self.keywords.get('VERBOSE') == "yes":
-                print "Accepted %f %f" % (math.exp(-delta),csi)
-                print (self.status[repl_a]['stateid_current'], self.status[repl_b]['stateid_current'])
+                self.logger.info("Accepted %f %f", math.exp(-delta), csi)
+                self.logger.info("%s %s", status_func(repl_a), status_func(repl_b))
             self.status[repl_a]['stateid_current'] = sid_b
             self.status[repl_b]['stateid_current'] = sid_a
             if self.keywords.get('VERBOSE') == "yes":
-                print (self.status[repl_a]['stateid_current'], self.status[repl_b]['stateid_current'])
+                self.logger.info("%s %s", status_func(repl_a), status_func(repl_b))
         else:
             if self.keywords.get('VERBOSE') == "yes":
-                print "Rejected %f %f" % (math.exp(-delta),csi)
+                self.logger.info("Accepted %f %f", math.exp(-delta), csi)
 
     def _getImpactData(self, file):
         """
