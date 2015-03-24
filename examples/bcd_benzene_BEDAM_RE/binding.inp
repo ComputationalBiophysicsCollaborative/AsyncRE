@@ -1,0 +1,74 @@
+
+write file -
+"binding_@n@.out" -
+      title -
+"binding_md" *
+
+CREATE
+  build primary name species1 type auto read sqldb file -
+"bcd_recpt.dms"
+  build primary name species2 type auto read sqldb file -
+"benzene_lig.dms"
+QUIT
+
+SETMODEL
+  setpotential
+    mmechanics nb12softcore umax 1000.0 consolv agbnp2 
+    weight constraints buffer 0.3
+    weight bind rxid 0 nrep 1 -
+lambda @lambda@
+  quit
+  read parm file -
+"paramstd.dat" -
+  noprint
+  energy rest domain cmdist kdist 3.0 dist0 5.0 toldist 2.5 -
+      read file "binding_cmrestraint.dat"
+  energy parm dielectric 1 nodist -
+   listupdate 10 -
+    cutoff 12 hmass 5
+  energy rescutoff byatom all
+  zonecons auto
+  energy constraints bonds hydrogens
+QUIT
+
+if @n@ eq 1
+DYNAMICS
+  read restart coordinates formatted file "binding_@nm1@.rst"
+  input target temperature @temperature@
+  input cntl initialize temperature at @temperature@
+QUIT
+endif
+
+if @n@ gt 1
+DYNAMICS
+  read restart coordinates and velocities formatted file "binding_@nm1@.rst"
+QUIT
+endif
+
+!equilibration at new state
+DYNAMICS
+  input cntl nstep 1000 delt 0.0005
+  input cntl constant temperature langevin relax 0.25
+  input target temperature @temperature@
+  input cntl nprnt 1000
+  input cntl tol 1.00000e-07
+  input cntl stop rotations
+  input cntl statistics off
+  run rrespa fast 8
+QUIT
+
+DYNAMICS
+  input cntl nstep 25000 delt 0.001
+  input cntl constant temperature langevin relax 1.0
+  input target temperature @temperature@
+  input cntl nprnt 1000
+  input cntl tol 1.00000e-07
+  input cntl stop rotations
+  input cntl statistics off
+  run rrespa fast 4
+  write restart coordinates and velocities formatted file "binding_@n@.rst"
+  write sql file "binding_rcpt_@n@.dms" name species1
+  write sql file "binding_lig_@n@.dms" name species2
+QUIT
+
+END

@@ -10,15 +10,16 @@ class impact_job(async_re):
     def _setLogger(self):
         self.logger = logging.getLogger("async_re.impact_async_re")
 
-    def _launchReplica(self,replica,cycle): #changed 12/2/14
+    def _launchReplica(self,replica,cycle): 
         """
         Launches a Impact sub-job
         """
         input_file = "%s_%d.inp" % (self.basename, cycle)
         log_file = "%s_%d.log" % (self.basename, cycle)
         err_file = "%s_%d.err" % (self.basename, cycle)
-
-        if not self.multiarch:
+        
+        
+        if self.transport_mechanism != "SSH":
             executable = os.getcwd() + "/runimpact"
             working_directory = os.getcwd() + "/r" + str(replica)
             job_info = {"executable": executable,
@@ -31,31 +32,11 @@ class impact_job(async_re):
             failed_file = "r%s/%s_%d.failed" % (str(replica),self.basename,cycle)
             if os.path.exists(failed_file):
                 os.remove(failed_file)
-
+        
         else:
             rstfile_p = "%s_%d.rst" % (self.basename,cycle-1)
-
             local_working_directory = os.getcwd() + "/r" + str(replica)
-
             remote_replica_dir = "%s_r%d_c%d" % (self.basename, replica, cycle)
-#
-#            self.compute_nodes=compute_nodes
-#
-#            nodeid=self.transport._availableNode()
-#
-#            if self.keywords.get('REMOTE_WORK_DIR'):
-#                wdir = self.keywords.get('REMOTE_WORK_DIR')
-#                replica_dir = "%s_r%d_c%d" % (self.basename, replica, cycle)
-#                remote_working_directory = wdir + "/" + replica_dir
-#            else:
-#                wdir = None
-#                remote_working_directory = None
-#
-#            if self.keywords.get('REMOTE_WORK_DIR') is None: #remote_working_directory is None:
-#                executable = os.getcwd() + "/runimpact"
-#            else:
-#                executable = remote_working_directory + "/runimpact"
-#
             executable = "./runimpact"
 
             job_info = {
@@ -64,17 +45,10 @@ class impact_job(async_re):
                 "output_file": log_file,
                 "error_file": err_file,
                 "working_directory": local_working_directory,
-                   "remote_replica_dir": remote_replica_dir,
+                "remote_replica_dir": remote_replica_dir,
                 "job_input_files": None,
                 "job_output_files": None,
                 "exec_directory": None}
-
-
-            # detect if the remote directory (tmp_folder) is setup, if so, copy
-            # all the required files from lib_directory to tmp folder //12/2/2014
-#            job_info["remote_working_directory"]=self.compute_nodes[nodeid]["tmp_folder"]
-
-
 
             # detect which kind of architecture the node use, then choosing
             # different library files and binary files in different lib and bin
@@ -98,22 +72,29 @@ class impact_job(async_re):
             job_output_files.append(err_file)
             output_file = "%s_%d.out" % (self.basename, cycle)
             rstfile = "%s_%d.rst" % (self.basename, cycle)
-            rcptfile="%s_rcpt_%d.dms" % (self.basename,cycle)
-            ligfile="%s_lig_%d.dms" % (self.basename,cycle)
+
+            if self.keywords.get('RE_TYPE') == 'TEMPT':
+                dmsfile = "%s_%d.dms" % (self.basename, cycle)
+            elif self.keywords.get('RE_TYPE') == 'BEDAMTEMPT':
+                rcptfile="%s_rcpt_%d.dms" % (self.basename,cycle)
+                ligfile="%s_lig_%d.dms" % (self.basename,cycle)    
             job_output_files.append(output_file)
             job_output_files.append(rstfile)
-            job_output_files.append(rcptfile)
-            job_output_files.append(ligfile)
+            if self.keywords.get('RE_TYPE') == 'TEMPT':
+                job_output_files.append(dmsfile)
+            elif self.keywords.get('RE_TYPE') == 'BEDAMTEMPT':
+                job_output_files.append(rcptfile)
+                job_output_files.append(ligfile)
 
             job_info["job_input_files"] = job_input_files;
             job_info["job_output_files"] = job_output_files;
 
         if self.keywords.get('VERBOSE') == "yes":
             msg = "_launchReplica(): Launching %s %s in directory %s cycle %d"
-            if not self.multiarch:
+            if self.transport_mechanism is not 'SSH':
                 self.logger.info(msg, executable, input_file, working_directory, cycle)
             else:
-                self.logger.info(msg, executable, input_file, working_directory, cycle)
+                self.logger.info(msg, executable, input_file, local_working_directory, cycle)
 
         status = self.transport.launchJob(replica, job_info)
 

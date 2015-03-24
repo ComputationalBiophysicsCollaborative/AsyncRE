@@ -6,6 +6,7 @@ asynchronous replica exchange calculations.
 Contributors:
 Emilio Gallicchio <emilio.gallicchio@gmail.com>
 Junchao Xia <junchaoxia@hotmail.com>
+Baofeng Zhang <baofzhang@gmail.com>
 
 This code is adapted from:
 https://github.com/saga-project/asyncre-bigjob
@@ -26,6 +27,8 @@ import logging, logging.config
 from configobj import ConfigObj
 
 from gibbs_sampling import *
+
+
 
 
 __version__ = '0.3.2-alpha2'
@@ -71,7 +74,7 @@ class async_re(object):
         self.command_file = command_file
         self.jobname = os.path.splitext(os.path.basename(command_file))[0]
         self.keywords = ConfigObj(self.command_file)
-
+        
         self._setLogger()
         self._checkInput()
         self._printStatus()
@@ -146,141 +149,45 @@ class async_re(object):
             self._exit("unknown JOB_TRANSPORT %s" % self.transport_mechanism)
         # reset job transport
         self.transport = None
-        self.multiarch = False
        # variables required for ssh-based transport
         if self.transport_mechanism == "SSH":
             if self.keywords.get('NODEFILE') is None:
                 self._exit("NODEFILE needs to be specified")
             nodefile = self.keywords.get('NODEFILE')
-            self.multiarch = False
-            if self.keywords.get('MULTIARCH') is None:
-                self.multiarch = False
-            elif self.keywords.get('MULTIARCH').lower() == 'yes':
-                self.multiarch = True
-            elif self.keywords.get('MULTIARCH').lower() == 'no':
-                self.multiarch = False
-            else:
-                self._exit("unknown value for multiarch switch %s" % self.multiarch)
-
-            if not self.multiarch:
-                self.nprocs = 0
-                self.compute_nodes = []
-                try:
-                    f = open(nodefile, 'r')
-                    node = f.readline()
-                    while node:
-                        self.compute_nodes.append(node.strip())
-                        self.nprocs += 1
-                        node = f.readline()
-                    f.close()
-                except:
-                    self._exit("Unable to process nodefile %s" % nodefile)
+            """
+	    check the information in the nodefile. there should be six columns in the  
+            nodefile. They are 'node name', 'slot number', 'number of threads', 
+	    'system architect','username', and 'name of the temperary folder'
+	    """
+	    node_info= []
+            try:
+                f = open(nodefile, 'r')
+	        line=f.readline()
+		nodeid = 0
+		while line:
+		    lineID=line.split(",")
+		    node_info.append({})
+		    node_info[nodeid]["node_name"] = str(lineID[0].strip())
+		    node_info[nodeid]["slot_number"] = str(lineID[1].strip())
+		    node_info[nodeid]["threads_number"] = str(lineID[2].strip())
+		    node_info[nodeid]["arch"] = str(lineID[3].strip())
+		    node_info[nodeid]["user_name"] = str(lineID[4].strip())
+		    node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
+		    #tmp_folder has to be pre-assigned
+		    if node_info[nodeid]["tmp_folder"] == "":
+	   		self._exit('tmp_folder in nodefile needs to be specified')
+		    nodeid += 1
+		    line = f.readline()
+		f.close()
+            except:
+                self._exit("Unable to process nodefile %s" % nodefile)
                 # reset job transport
                 self.transport = None
-            else:
-                # check the information in the nodefile. there should be six
-                # columns in the nodefile
-                # they are 'node name', 'slot number', 'number of threads',
-                # 'system architect','username',
-                # and 'name of the temperary folder'
-                node_info = []
-                try:
-                    f = open(nodefile, 'r')
-                    line = f.readline()
-                    nodeid = 0
-                    while line:
-                        lineID = line.split(",")
-                        node_info.append({})
-                        node_info[nodeid]["node_name"] = str(lineID[0].strip())
-                        node_info[nodeid]["slot_number"] = str(lineID[1].strip())
-                        node_info[nodeid]["threads_number"] = str(lineID[2].strip())
-                        node_info[nodeid]["arch"] = str(lineID[3].strip())
-                        node_info[nodeid]["user_name"] = str(lineID[4].strip())
-                        node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
-
-                        #tmp_folder has to be pre-assigned
-                        if node_info[nodeid]["tmp_folder"] == "":
-                            self._exit('tmp_folder in nodefile needs to be specified')
-
-                        nodeid += 1
-                        line = f.readline()
-
-                    f.close()
-
-                except:
-                    self._exit("Unable to process nodefile %s" % nodefile)
-
-                # reset job transport
-                self.transport = None
-                #set the nodes information
-                self.compute_nodes=node_info
-                #test the information
-                self.logger.info('Node info:')
-                for nodeid in node_info:
-                    for k, v in node_info[nodeid]:
-                        self.logger.info('Node %s  -  %s  -  %s', str(nodeid),
-                                         str(k), str(v))
-
-            # exchange or not, switch added for WCG by Junchao
-            if (not self.multiarch):
-               self.nprocs = 0
-               self.compute_nodes = []
-               try:
-                  f = open(nodefile, 'r')
-                  node = f.readline()
-                  while node:
-                      self.compute_nodes.append(node.strip())
-                      self.nprocs += 1
-                      node = f.readline()
-                  f.close()
-               except:
-                  self._exit("Unable to process nodefile %s" % nodefile)
-               # reset job transport
-               self.transport = None
-            else:
-
-               """
-               check the information in the nodefile. there should be six columns in the
-               nodefile
-               they are 'node name', 'slot number', 'number of threads',
-               'system architect','username',
-               and 'name of the temperary folder'
-               """
-               node_info= []
-               try:
-                  f = open(nodefile, 'r')
-                  line=f.readline()
-                  nodeid = 0
-                  while line:
-                      lineID=line.split(",")
-                      node_info.append({})
-                      node_info[nodeid]["node_name"] = str(lineID[0].strip())
-                      node_info[nodeid]["slot_number"] = str(lineID[1].strip())
-                      node_info[nodeid]["threads_number"] = str(lineID[2].strip())
-                      node_info[nodeid]["arch"] = str(lineID[3].strip())
-                      node_info[nodeid]["user_name"] = str(lineID[4].strip())
-                      node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
-
-                      #tmp_folder has to be pre-assigned
-                      if node_info[nodeid]["tmp_folder"] == "":
-                         self._exit('tmp_folder in nodefile needs to be specified')
-
-                      nodeid+=1
-                      line=f.readline()
-
-                  f.close()
-
-               except:
-                  self._exit("Unable to process nodefile %s" % nodefile)
-
-               # reset job transport
-               self.transport = None
-               #set the nodes information
-               self.compute_nodes=node_info
-               #test the information
-               self.logger.info("compute nodes: %s", ', '.join([n['node_name'] for
-                                                                n in node_info]))
-
+            #set the nodes information
+            self.compute_nodes=node_info
+            #Can print out here to check the node information
+            #self.logger.info("compute nodes: %s", ', '.join([n['node_name'] for n in node_info]))
+            
         # exchange or not, switch added for WCG by Junchao
 
         self.exchange = True
@@ -393,7 +300,8 @@ class async_re(object):
         if self.transport_mechanism == "SSH":
             from ssh_transport import ssh_transport
             # creates SSH transport
-            self.transport = ssh_transport(self.basename, self.compute_nodes, self.nreplicas,self.multiarch)
+            self.transport = ssh_transport(self.basename, self.compute_nodes, [ i for i in range(self.nreplicas)])
+            #self.transport = ssh_transport(self.basename, self.compute_nodes, self.nreplicas)
         elif self.transport_mechanism == "BOINC":
             from boinc_transport import boinc_transport
 

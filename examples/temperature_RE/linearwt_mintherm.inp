@@ -1,0 +1,63 @@
+
+write file -
+"linearwt_mintherm.out" -
+      title -
+"linearwt_mintherm" *
+
+CREATE
+  build primary name species1 type auto read sqldb file -
+"linearwt.dms"
+QUIT
+
+SETMODEL
+  setpotential
+    mmechanics consolv agbnp2
+  quit
+  read parm file -
+"paramstd.dat" -
+  noprint
+  energy parm dielectric 1 nodist -
+   listupdate 10 -
+    cutoff 12 hmass 5
+  energy rescutoff byatom all
+  zonecons auto
+  energy constraints bonds hydrogens
+QUIT
+
+MINIMIZE
+  conjugate dx0 5.000000e-02 dxm 1.000000e+00
+  input cntl mxcyc 200 rmscut 1.000000e-02 deltae 1.000000e-07
+  run
+QUIT
+
+put 100 into 'temp0'
+put 300 into 'tempt'
+put 10 into 'n'
+put 'tempt'- 'temp0' into 'dtemp'
+put 'dtemp' / 'n' into 'dt'
+
+put 0 into 'i'
+while 'i' lt 'n'
+
+DYNAMICS
+  input cntl nstep 1000 delt 0.0005
+  input cntl constant totalenergy
+  input cntl initialize temperature at 'temp0'
+  input cntl nprnt 100
+  input cntl tol 1.00000e-07
+  input cntl stop rotations
+  input cntl statistics off
+  run rrespa fast 8
+QUIT
+
+put 'temp0' + 'dt' into 'temp0'
+put 'i' + 1 into 'i'
+
+endwhile
+
+DYNAMICS
+  write restart coordinates formatted file "linearwt_0.rst"  
+  write sql name species1 file "linearwt_mintherm.dms"
+QUIT
+
+END

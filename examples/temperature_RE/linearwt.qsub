@@ -1,0 +1,19 @@
+
+#!/bin/bash
+#PBS -q production
+#PBS -l select=64:ncpus=1
+#PBS -N linearwt
+#PBS -l place=free
+#PBS -l walltime=48:10:00
+#PBS -V
+
+cd $PBS_O_WORKDIR
+sdir=/scratch/e.gallicchio
+
+source ${sdir}/env/bin/activate
+
+cp $PBS_NODEFILE .qsub_nodes
+#1 core per replica
+awk '{ for(i=0;i<1;i++)print $1 ","i",1,Linux-x86_64,,/tmp"}' < .qsub_nodes > nodefile
+
+python ~/src/async_re-0.3.2-alpha-multiarch/tempt_async_re.py linearwt_asyncre.cntl > LOG 2>&1
