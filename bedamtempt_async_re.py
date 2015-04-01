@@ -34,7 +34,7 @@ class bedamtempt_async_re_job(bedam_async_re_job):
         #build parameters for the lambda/temperatures combined states
         self.nreplicas = self._buildBEDAMStates(lambdas,temperatures)
         #executive file's directory
-        if self.keywords.get('MULTIARCH') is not None:
+        if self.keywords.get('JOB_TRANSPORT') is 'SSH':
             if self.keywords.get('EXEC_DIRECTORY') is None:
                 self._exit("EXEC DIRECTORY needs to be specified")
 
@@ -85,8 +85,8 @@ class bedamtempt_async_re_job(bedam_async_re_job):
 
     def _doExchange_pair(self,repl_a,repl_b):
         """
-Performs exchange of lambdas for BEDAM replica exchange.
-"""
+        Performs exchange of lambdas for BEDAM replica exchange.
+        """
         kb = 0.0019872041
 
         cycle_a = self.status[repl_a]['cycle_current']

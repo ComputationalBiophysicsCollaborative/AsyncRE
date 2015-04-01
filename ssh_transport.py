@@ -18,7 +18,7 @@ class ssh_transport(Transport):
     """
     Class to launch and monitor jobs on a set of nodes via ssh (paramiko)
     """
-    def __init__(self, jobname, compute_nodes, replicas,multiarch): #changed on 12/1/14
+    def __init__(self, jobname, compute_nodes, replicas): #changed on 12/1/14
         # jobname: identifies current asyncRE job
         # compute_nodes: list of names of nodes in the pool
         # nreplicas: number of replicas, 0 ... nreplicas-1
@@ -28,10 +28,7 @@ class ssh_transport(Transport):
         # names of compute nodes (slots)
         self.compute_nodes = compute_nodes #changed on 12/1/14
         self.nprocs = len(self.compute_nodes)
-
-        self.multiarch = multiarch
-        # self.arch_system = compute_nodes[    #changed 12/1/14
-
+                        
         # node status = None if idle
         # Otherwise a structure containing:
         #    replica number being executed
@@ -42,7 +39,7 @@ class ssh_transport(Transport):
 
         # contains the nodeid of the node running a replica
         # None = no information about where the replica is running
-        self.replica_to_job = [ None for k in range(replicas) ]
+        self.replica_to_job = [ None for k in replicas ]
 
         # implements a queue of jobs from which to draw the next job
         # to launch
@@ -86,36 +83,36 @@ class ssh_transport(Transport):
     def _launchCmd(self, command, job):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(job['nodename']) #,username=job['username'],password=None)
-        self.logger.info("SSH connection established to %s", job['nodename'])
+        ssh.connect(job['nodename']) 
+        self.logger.info("SSH connection established to %s",job['nodename'])
 
-        if self.multiarch:
-            if job["remote_working_directory"]:
-                mkdir_command = "mkdir -p %s" % job['remote_working_directory']
-                stdin, stdout, stderr = ssh.exec_command(mkdir_command)
-                output = stdout.read()
-                error = stderr.read()
-                stdin.close()
-                stdout.close()
-                stderr.close()
-                scpt = scp.SCPClient(ssh.get_transport())
-                for filename in job["exec_files"]:
-                    local_file = filename
-                    remote_file = job["remote_working_directory"] + "/"
-                    self.logger.info("scp %s %s", local_file, remote_file)
-                    scpt.put(local_file, remote_file)
-                for filename in job["job_input_files"]:
-                    local_file = job["working_directory"] + "/" + filename
-                    remote_file = job["remote_working_directory"] + "/" + filename
-                    scpt.put(local_file, remote_file)
+        
+        if job["remote_working_directory"]:
+            mkdir_command = "mkdir -p %s" % job['remote_working_directory']
+            stdin, stdout, stderr = ssh.exec_command(mkdir_command)
+            output = stdout.read()
+            error = stderr.read()
+            stdin.close()
+            stdout.close()
+            stderr.close()
+            scpt = scp.SCPClient(ssh.get_transport())
+            for filename in job["exec_files"]:
+                local_file = filename
+                remote_file = job["remote_working_directory"] + "/"
+                #self.logger.info("scp %s %s", local_file, remote_file) #can print out here to check the scp
+                scpt.put(local_file, remote_file)
+            for filename in job["job_input_files"]:
+                local_file = job["working_directory"] + "/" + filename
+                remote_file = job["remote_working_directory"] + "/" + filename
+                scpt.put(local_file, remote_file)
 
-                chmod_command = "chmod -R 777 %s" % job['remote_working_directory']
-                stdin, stdout, stderr = ssh.exec_command(chmod_command)
-                output = stdout.read()
-                error = stderr.read()
-                stdin.close()
-                stdout.close()
-                stderr.close()
+            chmod_command = "chmod -R 777 %s" % job['remote_working_directory']
+            stdin, stdout, stderr = ssh.exec_command(chmod_command)
+            output = stdout.read()
+            error = stderr.read()
+            stdin.close()
+            stdout.close()
+            stderr.close()
 
         stdin, stdout, stderr = ssh.exec_command(command)
         output = stdout.read()
@@ -124,17 +121,20 @@ class ssh_transport(Transport):
         stdout.close()
         stderr.close()
 
-        if (self.multiarch) :
-            if job["remote_working_directory"]:
-                for filename in job["job_output_files"]:
-                    local_file = job["working_directory"] + "/" + filename
-                    remote_file = job["remote_working_directory"] + "/" + filename
+        
+        if job["remote_working_directory"]:
+            for filename in job["job_output_files"]:
+                local_file = job["working_directory"] + "/" + filename
+                remote_file = job["remote_working_directory"] + "/" + filename
+                try:
                     scpt.get(remote_file, local_file)
-                rmdir_command = "rm -rf %s" % job['remote_working_directory']
-                stdin, stdout, stderr = ssh.exec_command(rmdir_command)
-                stdin.close()
-                stdout.close()
-                stderr.close()
+                except:
+                    self.logger.info("Warning: unable to copy back file %s" % local_file)
+            rmdir_command = "rm -rf %s" % job['remote_working_directory']
+            stdin, stdout, stderr = ssh.exec_command(rmdir_command)
+            stdin.close()
+            stdout.close()
+            stderr.close()
 
         job['output_queue'].put(output)
         job['error_queue'].put(error)
@@ -149,11 +149,8 @@ class ssh_transport(Transport):
         output_file = job_info["output_file"]
         error_file = job_info["error_file"]
         executable = job_info["executable"]
-        if not self.multiarch:
-            working_directory = job_info["working_directory"]
-            command = "cd %s ; %s %s > %s 2> %s " % (working_directory, executable, input_file, output_file, error_file)
-        else:
-            command = "%s %s > %s 2> %s " % ( executable, input_file, output_file, error_file)
+        
+        command = "%s %s > %s 2> %s " % ( executable, input_file, output_file, error_file)
 
         output_queue = mp.Queue()
         error_queue = mp.Queue()
@@ -171,7 +168,7 @@ class ssh_transport(Transport):
 
         return self.jobqueue.qsize()
 
-    #coprocessor test
+    #intel coprocessor setup
     def ModifyCommand(self,job, command):
         nodename = job['nodename']
         nodeN = job['nthreads']
@@ -179,22 +176,18 @@ class ssh_transport(Transport):
 
         #add command to go to remote working directory
         cd_to_command = "cd %s ; " % job["remote_working_directory"]
-        #new_command = add_to_command + command
-
-        mic_pattern = re.compile("mic0")
+        
+        mic_pattern = re.compile("mic0" or "mic1")
 
         if re.search(mic_pattern, nodename):
-            offset = slotN * (nodeN/4)  #changed 12/2/14
+            offset = slotN * (nodeN/4)  
             add_to_command = "export KMP_PLACE_THREADS=6C,4T,%dO ; " % offset
-            # new_command = add_to_command + command
         else:
             add_to_command = "export OMP_NUM_THREADS=%d;"% nodeN
-            # new_command = add_
-            new_command = add_to_command + cd_to_command + command
-        self.logger.info(new_command)
+        new_command = add_to_command + cd_to_command + command
+        #self.logger.info(new_command) #can print new_command here to check the command
         return new_command
-    #test end
-
+    
     def ProcessJobQueue(self, mintime, maxtime):
         """
         Launches jobs waiting in the queue.
@@ -215,46 +208,40 @@ class ssh_transport(Transport):
                 # grabs job on top of the queue
                 replica = self.jobqueue.get()
                 job = self.replica_to_job[replica]
-
+               
                 # assign job to available node
                 job['nodeid'] = node
-                if not self.multiarch:
-                    job['nodename'] = self.compute_nodes[node]
-                    # get the shell command
-                    command = job['command']
+                job['nodename'] = self.compute_nodes[node]["node_name"]
+                job['nthreads'] = int(self.compute_nodes[node]["threads_number"]) 
+                job['nslots']   = int(self.compute_nodes[node]["slot_number"])    
+                job['username'] = self.compute_nodes[node]["user_name"]
+                # get the shell command
+                command = job['command']
+                #retrieve remote working directory of node
+                job["remote_working_directory"] = self.compute_nodes[node]["tmp_folder"] + "/" + job["remote_replica_dir"]
+
+                command=self.ModifyCommand(job,command)
+
+                if job["remote_working_directory"] and job['job_input_files']:
+                    for filename in job['job_input_files']:
+                        local_file = job["working_directory"] + "/" + filename
+                        remote_file = job["remote_working_directory"] + "/" + filename
+                        #self.logger.info("%s %s", local_file, remote_file) #can print out here to verify files
+
+                if self.compute_nodes[node]["arch"]:
+                    architecture = self.compute_nodes[node]["arch"]
                 else:
-                    job['nodename'] = self.compute_nodes[node]["node_name"]
-                    job['nthreads'] = int(self.compute_nodes[node]["threads_number"]) #changed 12/2/14
-                    job['nslots']   = int(self.compute_nodes[node]["slot_number"])    #changed 12/2/14
-                    job['username'] = self.compute_nodes[node]["user_name"]
-                    # get the shell command
-                    command = job['command']
-                     #retrieve remote working directory of node
-                    job["remote_working_directory"] = self.compute_nodes[node]["tmp_folder"] + "/" + job["remote_replica_dir"]
+                    architecture = ""
 
-#coprocessor test
-                    command=self.ModifyCommand(job,command)
-#test end
-                    if job["remote_working_directory"] and job['job_input_files']:
-                        for filename in job['job_input_files']:
-                            local_file = job["working_directory"] + "/" + filename
-                            remote_file = job["remote_working_directory"] + "/" + filename
-                            self.logger.info("%s %s", local_file, remote_file)
+                exec_directory = job["exec_directory"]
+                lib_directory = exec_directory + "/lib/" + architecture
+                bin_directory  = exec_directory + "/bin/" + architecture
 
-                    if self.compute_nodes[node]["arch"]:
-                        architecture = self.compute_nodes[node]["arch"]
-                    else:
-                        architecture = ""
-
-                    exec_directory = job["exec_directory"]
-                    lib_directory = exec_directory + "/lib/" + architecture
-                    bin_directory  = exec_directory + "/bin/" + architecture
-
-                    job["exec_files"] = []
-                    for filename in os.listdir(lib_directory):
-                        job["exec_files"].append(lib_directory + "/" + filename)
-                    for filename in os.listdir(bin_directory):
-                        job["exec_files"].append(bin_directory + "/" + filename)
+                job["exec_files"] = []
+                for filename in os.listdir(lib_directory):
+                    job["exec_files"].append(lib_directory + "/" + filename)
+                for filename in os.listdir(bin_directory):
+                    job["exec_files"].append(bin_directory + "/" + filename)
 
                 # launches job
                 processid = mp.Process(target=self._launchCmd, args=(command, job))

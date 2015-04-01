@@ -1,0 +1,15 @@
+JOB_TRANSPORT = 'SSH'
+EXEC_DIRECTORY="/home/users/bfzhang/eglab/academic-impact"
+RE_TYPE = 'TEMPT'
+ENGINE = 'IMPACT'
+ENGINE_INPUT_BASENAME = 'linearwt'
+RE_SETUP = 'YES'
+ENGINE_INPUT_EXTFILES = 'agbnp2.param,paramstd.dat,runimpact,linearwt_0.rst,linearwt.inp,linearwt.dms'
+TEMPERATURES = '300,314,329,345,362,379,397,417'
+WALL_TIME = 128800
+CYCLE_TIME = 30
+NODEFILE = 'nodefile'
+TOTAL_CORES = 8
+SUBJOB_CORES = 2
+SUBJOBS_BUFFER_SIZE = '0.100000'
+VERBOSE = 'no'

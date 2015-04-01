@@ -1,0 +1,1216 @@
+ Entering IMPACT execution environment 
+ Date: Monday, January 05 2015, at 13:42:50 EST
+ ---------------------------------------------------------------------------
+ Impact version 0701001
+ mmshare version            2
+ Copyright (c) Schrodinger, LLC.
+ All Rights Reserved.
+
+ For hardware platform Linux-x86_64.intel
+ Compiled on: Sat Dec 6 17:36:06 EST 2014
+ Host: Linux agropoli 3.5.0-54-generic #81~precise1-Ubuntu SMP Tue Jul 15 04:02:22 UTC 2014 x86_64
+ Job Name: linearwt_mintherm
+ SCHRODINGER  directory: /home/software/schrodinger/Desmond_Maestro_2013.3
+ IMPACT_EXEC  directory: /home/users/dkilburg/schrod/academic-impact/bin/Linux-x86_64
+
+ This software contains material that is a copyrighted
+ work of, and that is licensed from, Rutgers,
+ the State University of New Jersey.
+
+ This software is provided under license and may be 
+ used, copied, transmitted, and stored only in accordance
+ with the terms and conditions of that license.
+ ---------------------------------------------------------------------------
+
+ Job title:        "linearwt_mintherm"
+ Main output file: linearwt_mintherm.out
+
+ Clock-based global random seed:     1420483370
+
+                             - Input command file -
+ ---------------------------------------------------------------------------
+
+write file -
+"linearwt_mintherm.out" -
+      title -
+"linearwt_mintherm" *
+
+CREATE
+  build primary name species1 type auto read sqldb file -
+"linearwt.dms"
+QUIT
+
+SETMODEL
+  setpotential
+    mmechanics consolv agbnp2
+  quit
+  read parm file -
+"paramstd.dat" -
+  noprint
+  energy parm dielectric 1 nodist -
+   listupdate 10 -
+    cutoff 12 hmass 5
+  energy rescutoff byatom all
+  zonecons auto
+  energy constraints bonds hydrogens
+QUIT
+
+MINIMIZE
+  conjugate dx0 5.000000e-02 dxm 1.000000e+00
+  input cntl mxcyc 200 rmscut 1.000000e-02 deltae 1.000000e-07
+  run
+QUIT
+
+put 100 into 'temp0'
+put 300 into 'tempt'
+put 10 into 'n'
+put 'tempt'- 'temp0' into 'dtemp'
+put 'dtemp' / 'n' into 'dt'
+
+put 0 into 'i'
+while 'i' lt 'n'
+
+DYNAMICS
+  input cntl nstep 1000 delt 0.0005
+  input cntl constant totalenergy
+  input cntl initialize temperature at 'temp0'
+  input cntl nprnt 100
+  input cntl tol 1.00000e-07
+  input cntl stop rotations
+  input cntl statistics off
+  run rrespa fast 8
+QUIT
+
+put 'temp0' + 'dt' into 'temp0'
+put 'i' + 1 into 'i'
+
+endwhile
+
+DYNAMICS
+  write restart coordinates formatted file "linearwt_0.rst"
+  write sql name species1 file "linearwt_mintherm.dms"
+QUIT
+
+END
+ ---------------------------------------------------------------------------
+
+                             - End of input file -
+
+
+ ---------------------------------
+ Beginning IMPACT task: CREA
+ Beginning CREATE subtask BUIL                                                  
+ Beginning CREATE subtask QUIT                                                  
+
+ ---------------------------------
+ Beginning IMPACT task: SETM
+ Beginning SETMODEL subtask SETP                                                
+%IMPACT-I (info): At line  14
+ %IMPACT-I: Using AGBNP2: Analytical Generalized Born Model + Analytic 
+ Non-Polar Hydration Model
+ Beginning SETMODEL subtask READ                                                
+ Beginning SETMODEL subtask ENER                                                
+ Beginning SETMODEL subtask ENER                                                
+ Beginning SETMODEL subtask ZONE                                                
+ FREEZE/CONSTRAIN/RELAX ATOMS BASED ON USER SELECTION IN STRUCTURE FILE
+ 
+                     SUMMARY OF ZONE CONSTRAINTS BY REGION
+ 
+ 
+                               free       buffer        fixed
+ Number of atoms                131            0            0
+ Charge in region          -1.00000      0.00000      0.00000
+ ------------------------------------------------
+ 
+ Species SPECIES1            
+ Number of bonds free to move      130
+ Number of angles free to move     238
+ Number of torsions free to move    360
+ Beginning SETMODEL subtask ENER                                                
+%IMPACT-I: Applying bond constraints for all hydrogen atoms
+ Beginning SETMODEL subtask QUIT                                                
+ 
+ 
+   Term                    Weight              Function form       
+
+ Intramolecular terms for species name SPECIES1            
+   bond                     1.00000            Harmonic                      
+   angle                    1.00000            Harmonic                      
+   torsion                  1.00000            Fourier                       
+   el14                     1.00000            1,4 electrostatics            
+   lj14                     1.00000            1,4 vdW - 6-12 pot            
+   el internal              1.00000            internal electrostatics       
+   lj internal              1.00000            internal vdW - 6-12 pot       
+   buffer constraint       25.00000            Harmonic                           0.000
+ 
+  Intermolecular terms for all species 
+   vdw                      1.00000            6-12 potential                
+   electrostatic            1.00000            Constant dielectric           
+
+ ---------------------------------
+ Beginning IMPACT task: MINI
+%IMPACT-I (info): At line  27
+ %IMPACT-I: SHAKE constraints are not used in minimization.
+ Beginning MINIMIZE subtask CONJ                                                
+ Beginning MINIMIZE subtask INPU                                                
+ Beginning MINIMIZE subtask RUN                                                 
+
+ Energy parameters
+
+
+ The non-bonded list cutoff             =   12.00000
+ The H-bond cutoff                      =    3.50000
+ The 1-4 Lennard-Jones screening factor =    1.00000
+ The 1-4 electrostatic screening factor =    1.00000
+ The dielectric constant is constant and is    1.00000
+ Non-bonded list generated every         10 steps
+
+
+ Total number of atoms  =   131
+
+
+ MINIMIZATION PARAMETERS
+
+ MAXIMUM NO. OF CYCLES =    200
+ ENERGY CRITERION =    0.10000E-06
+ RMS FORCE CRITERION =    0.10000E-01
+ CONJUGATE GRADIENT ONLY.
+   INITIAL STEPSIZE =    0.05000
+   LARGEST STEP SIZE =    1.00000
+   MAXIMUM NUMBER OF LINE SEARCH STEPS =     5
+ 
+ Neighbor List Cutoff Settings
+ ==================================
+ Cutoff radius:   12.0000000000000     
+ Update frequency: every           10  steps
+ Species   1 : Neighbors are calculated on a per residue basis
+ Species   1 : Cutoff by inter-atomic distances
+ 
+ 
+ bondforc(): using     4 OpenMP thread(s).
+ 
+ 
+ nbenergy(): using     4 OpenMP thread(s).
+ 
+
+
+ Step number:          0         Non-bonded count:     7806
+ E-pot        RMS grad     Max grad    
+ -6.09539E+02  1.20609E+01  1.26860E+02
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.21236E+01  2.16490E+01  1.90767E+01  3.63717E+01  2.74800E+02 -3.43878E+01 -7.57723E+02  0.00000E+00 -1.84065E+02  2.61589E+00
+
+
+ Step number:         10         Non-bonded count:     7806
+ -6.29183E+02  1.84776E+00  1.19599E+01
+  3.66897E+00  1.81006E+01  1.96262E+01  3.63707E+01  2.78363E+02 -3.27381E+01 -7.65093E+02  0.00000E+00 -1.90069E+02  2.58806E+00
+
+
+ Step number:         20         Non-bonded count:     7806
+ -6.32635E+02  1.22029E+00  7.19479E+00
+  3.69056E+00  1.76611E+01  1.89594E+01  3.55484E+01  2.76352E+02 -3.13322E+01 -7.62135E+02  0.00000E+00 -1.94366E+02  2.98704E+00
+
+
+ Step number:         30         Non-bonded count:     7806
+ -6.34757E+02  9.66216E-01  5.78739E+00
+  3.72270E+00  1.69882E+01  1.87844E+01  3.48527E+01  2.76443E+02 -3.03744E+01 -7.59224E+02  0.00000E+00 -1.99417E+02  3.46714E+00
+
+
+ Step number:         40         Non-bonded count:     7806
+ -6.37129E+02  1.05804E+00  9.53466E+00
+  4.39260E+00  1.72083E+01  1.81162E+01  3.32297E+01  2.75921E+02 -2.90073E+01 -7.54298E+02  0.00000E+00 -2.06346E+02  3.65458E+00
+
+
+ Step number:         50         Non-bonded count:     7806
+ -6.38642E+02  9.29080E-01  6.95990E+00
+  4.29624E+00  1.74084E+01  1.70787E+01  3.33727E+01  2.75088E+02 -2.81478E+01 -7.52438E+02  0.00000E+00 -2.08832E+02  3.53250E+00
+
+
+ Step number:         60         Non-bonded count:     7806
+ -6.40556E+02  9.98393E-01  6.78249E+00
+  4.35575E+00  1.78618E+01  1.59349E+01  3.38838E+01  2.76415E+02 -2.86480E+01 -7.50674E+02  0.00000E+00 -2.13376E+02  3.69066E+00
+
+
+ Step number:         70         Non-bonded count:     7806
+ -6.41975E+02  7.53052E-01  7.56635E+00
+  4.32366E+00  1.71811E+01  1.54560E+01  3.40458E+01  2.76429E+02 -2.89682E+01 -7.48739E+02  0.00000E+00 -2.15626E+02  3.92271E+00
+
+
+ Step number:         80         Non-bonded count:     7806
+ -6.42813E+02  6.33463E-01  2.40551E+00
+  3.96130E+00  1.64685E+01  1.58866E+01  3.44612E+01  2.76817E+02 -2.77441E+01 -7.49579E+02  0.00000E+00 -2.16832E+02  3.74834E+00
+
+
+ Step number:         90         Non-bonded count:     7806
+ -6.43451E+02  5.43844E-01  2.83896E+00
+  4.05565E+00  1.62715E+01  1.63627E+01  3.40202E+01  2.76615E+02 -2.77593E+01 -7.49438E+02  0.00000E+00 -2.17377E+02  3.79748E+00
+
+
+ Step number:        100         Non-bonded count:     7806
+ -6.44190E+02  6.62537E-01  3.74358E+00
+  4.21025E+00  1.59855E+01  1.70134E+01  3.35700E+01  2.76243E+02 -2.71985E+01 -7.51422E+02  0.00000E+00 -2.16588E+02  3.99627E+00
+
+
+ Step number:        110         Non-bonded count:     7806
+ -6.44981E+02  5.51191E-01  3.30902E+00
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  4.19960E+00  1.56140E+01  1.68514E+01  3.32472E+01  2.76728E+02 -2.77464E+01 -7.51279E+02  0.00000E+00 -2.16620E+02  4.02397E+00
+
+
+ Step number:        120         Non-bonded count:     7806
+ -6.45610E+02  5.09233E-01  2.75847E+00
+  3.95559E+00  1.55031E+01  1.60340E+01  3.35762E+01  2.77537E+02 -2.72271E+01 -7.52866E+02  0.00000E+00 -2.16176E+02  4.05288E+00
+
+
+ Step number:        130         Non-bonded count:     7806
+ -6.46155E+02  4.66723E-01  2.48167E+00
+  3.79855E+00  1.52888E+01  1.57333E+01  3.40951E+01  2.78154E+02 -2.69534E+01 -7.54431E+02  0.00000E+00 -2.15905E+02  4.06458E+00
+
+
+ Step number:        140         Non-bonded count:     7806
+ -6.46645E+02  5.39139E-01  2.35110E+00
+  3.78148E+00  1.49252E+01  1.60232E+01  3.42150E+01  2.78615E+02 -2.82330E+01 -7.53456E+02  0.00000E+00 -2.16635E+02  4.11889E+00
+
+
+ Step number:        150         Non-bonded count:     7806
+ -6.47261E+02  4.30392E-01  1.92711E+00
+  3.82219E+00  1.47798E+01  1.63892E+01  3.42279E+01  2.78425E+02 -2.91792E+01 -7.51841E+02  0.00000E+00 -2.17931E+02  4.04719E+00
+
+
+ Step number:        160         Non-bonded count:     7806
+ -6.47922E+02  5.57145E-01  3.06693E+00
+  4.06743E+00  1.49270E+01  1.61904E+01  3.40674E+01  2.77942E+02 -2.98534E+01 -7.49392E+02  0.00000E+00 -2.19917E+02  4.04669E+00
+
+
+ Step number:        170         Non-bonded count:     7806
+ -6.48413E+02  4.74863E-01  2.55439E+00
+  3.91624E+00  1.47318E+01  1.59432E+01  3.44218E+01  2.78287E+02 -2.92808E+01 -7.49858E+02  0.00000E+00 -2.20579E+02  4.00457E+00
+
+
+ Step number:        180         Non-bonded count:     7806
+ -6.48906E+02  5.19167E-01  2.62844E+00
+  3.66207E+00  1.49282E+01  1.57518E+01  3.47362E+01  2.78730E+02 -2.93459E+01 -7.51075E+02  0.00000E+00 -2.20321E+02  4.02886E+00
+
+
+ Step number:        190         Non-bonded count:     7806
+ -6.49340E+02  3.92788E-01  2.13556E+00
+  3.89380E+00  1.47708E+01  1.61276E+01  3.45135E+01  2.78933E+02 -2.90717E+01 -7.53361E+02  0.00000E+00 -2.19135E+02  3.98881E+00
+  MAXIMUM NUMBER OF CYCLES EXCEEDED
+
+
+ Step number:        200         Non-bonded count:     7806
+ -6.49614E+02  3.57930E-01  2.69816E+00
+  4.10817E+00  1.53185E+01  1.62522E+01  3.39443E+01  2.78744E+02 -2.95642E+01 -7.53446E+02  0.00000E+00 -2.19161E+02  4.19062E+00
+  TOTAL NUMBER OF ENERGY EVALUATIONS          510
+
+
+ Step number:        200         Non-bonded count:     7806
+ -6.49614E+02  3.57930E-01  2.69816E+00
+  4.10817E+00  1.53185E+01  1.62522E+01  3.39443E+01  2.78744E+02 -2.95642E+01 -7.53446E+02  0.00000E+00 -2.19161E+02  4.19062E+00
+ Beginning MINIMIZE subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 1420483370)
+  Initial temperature set to: 
+    100 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+%IMPACT-I (wrpshk): Allocating memory for     67 constraints
+%IMPACT-I (wrprat): Allocating memory for     67 constraints
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  5.36847E+01 -6.16492E+02  1.70691E+01 -6.33561E+02  6.59263E-33  1.13209E-30
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  6.89898E+00  2.35642E+01  1.81524E+01  3.40826E+01  2.75522E+02 -2.59224E+01 -7.52239E+02  0.00000E+00 -2.17451E+02  3.83118E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  5.48399E+01 -6.16492E+02  1.74364E+01 -6.33929E+02  2.51546E-32  6.42892E-30
+  6.02298E+00  2.33844E+01  1.79147E+01  3.44994E+01  2.77765E+02 -2.86913E+01 -7.50021E+02  0.00000E+00 -2.18797E+02  3.99371E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  4.88387E+01 -6.16491E+02  1.55283E+01 -6.32020E+02  2.09860E-32  8.52645E-31
+  5.49432E+00  2.35283E+01  1.85953E+01  3.55131E+01  2.77591E+02 -3.08912E+01 -7.47538E+02  0.00000E+00 -2.19502E+02  5.18930E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  4.78167E+01 -6.16491E+02  1.52034E+01 -6.31695E+02  1.20399E-32  1.47026E-30
+  7.01001E+00  2.24893E+01  1.69215E+01  3.54714E+01  2.77958E+02 -2.80703E+01 -7.47832E+02  0.00000E+00 -2.20677E+02  5.03416E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  5.18106E+01 -6.16492E+02  1.64732E+01 -6.32966E+02  1.21233E-32  6.52425E-31
+  8.19246E+00  2.54656E+01  1.73099E+01  3.29871E+01  2.78535E+02 -3.16261E+01 -7.47125E+02  0.00000E+00 -2.22341E+02  5.63572E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  5.45170E+01 -6.16491E+02  1.73337E+01 -6.33825E+02  1.42219E-32  4.00649E-31
+  7.02857E+00  2.27431E+01  1.77829E+01  3.29026E+01  2.77142E+02 -2.70891E+01 -7.48892E+02  0.00000E+00 -2.20635E+02  5.19236E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  4.57507E+01 -6.16492E+02  1.45465E+01 -6.31039E+02  2.17671E-32  1.84554E-30
+  6.88153E+00  2.45744E+01  1.67296E+01  3.45104E+01  2.78775E+02 -2.70645E+01 -7.48929E+02  0.00000E+00 -2.21178E+02  4.66190E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  5.00409E+01 -6.16491E+02  1.59105E+01 -6.32402E+02  1.51961E-32  1.66884E-31
+  6.09532E+00  2.28271E+01  1.90578E+01  3.39526E+01  2.79131E+02 -3.14062E+01 -7.42787E+02  0.00000E+00 -2.23809E+02  4.53750E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  4.17138E+01 -6.16491E+02  1.32629E+01 -6.29754E+02  3.69367E-32  5.19082E-30
+  9.42917E+00  2.23478E+01  1.88336E+01  3.34079E+01  2.79719E+02 -3.19639E+01 -7.43212E+02  0.00000E+00 -2.23529E+02  5.21251E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  4.50421E+01 -6.16492E+02  1.43212E+01 -6.30813E+02  7.52476E-34  1.78598E-30
+  7.79847E+00  2.22908E+01  1.88962E+01  3.42173E+01  2.78446E+02 -3.33117E+01 -7.39550E+02  0.00000E+00 -2.24431E+02  4.83087E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 1668769050)
+  Initial temperature set to: 
+    120 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  8.13779E+01 -5.91452E+02  2.58742E+01 -6.17326E+02  6.20337E-33  2.58764E-31
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  9.39307E+00  3.38024E+01  2.06356E+01  3.45497E+01  2.81161E+02 -3.04127E+01 -7.47935E+02  0.00000E+00 -2.23963E+02  5.44337E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  1.00776E+02 -5.91451E+02  3.20418E+01 -6.23493E+02  6.19686E-33  2.36307E-30
+  7.15621E+00  2.80943E+01  1.89245E+01  3.43129E+01  2.80582E+02 -2.77865E+01 -7.42917E+02  0.00000E+00 -2.26874E+02  5.01440E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  1.00029E+02 -5.91454E+02  3.18044E+01 -6.23258E+02  1.41018E-32  1.33858E-30
+  9.11204E+00  2.72142E+01  1.92927E+01  3.45350E+01  2.77292E+02 -2.58476E+01 -7.45380E+02  0.00000E+00 -2.23996E+02  4.51937E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  8.80633E+01 -5.91451E+02  2.79998E+01 -6.19451E+02  9.49741E-33  1.18646E-30
+  7.07958E+00  2.87290E+01  2.00124E+01  3.48658E+01  2.76486E+02 -3.07399E+01 -7.33612E+02  0.00000E+00 -2.28142E+02  5.87081E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  8.80456E+01 -5.91452E+02  2.79941E+01 -6.19447E+02  1.20409E-32  8.28165E-31
+  9.56307E+00  3.05975E+01  2.31733E+01  3.38180E+01  2.80040E+02 -3.59717E+01 -7.37186E+02  0.00000E+00 -2.29266E+02  5.78500E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  9.29410E+01 -5.91453E+02  2.95507E+01 -6.21004E+02  2.75995E-33  1.86398E-30
+  8.43725E+00  2.73560E+01  2.03276E+01  3.64197E+01  2.77298E+02 -2.94243E+01 -7.40713E+02  0.00000E+00 -2.25442E+02  4.73770E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  8.86388E+01 -5.91452E+02  2.81828E+01 -6.19634E+02  3.91613E-32  2.14762E-30
+  7.97316E+00  2.89077E+01  2.19063E+01  3.66143E+01  2.76534E+02 -2.93633E+01 -7.41915E+02  0.00000E+00 -2.25599E+02  5.30837E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  9.89115E+01 -5.91452E+02  3.14490E+01 -6.22901E+02  1.76233E-32  3.49337E-30
+  1.04391E+01  2.76008E+01  2.05143E+01  3.45440E+01  2.79679E+02 -2.72176E+01 -7.47332E+02  0.00000E+00 -2.25766E+02  4.63781E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  8.51064E+01 -5.91453E+02  2.70596E+01 -6.18512E+02  1.62785E-32  3.62081E-31
+  1.12889E+01  3.12768E+01  2.07354E+01  3.41601E+01  2.76614E+02 -3.00133E+01 -7.44325E+02  0.00000E+00 -2.23470E+02  5.21988E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  9.21564E+01 -5.91452E+02  2.93012E+01 -6.20753E+02  3.28199E-33  2.65787E-31
+  6.75324E+00  3.05669E+01  2.26174E+01  3.48691E+01  2.79037E+02 -3.01045E+01 -7.46087E+02  0.00000E+00 -2.23502E+02  5.09719E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 115992994)
+  Initial temperature set to: 
+    140 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  1.03233E+02 -5.78383E+02  3.28231E+01 -6.11206E+02  1.40284E-31  1.08602E-29
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  9.73457E+00  3.58216E+01  2.26150E+01  3.55961E+01  2.81072E+02 -2.86322E+01 -7.49865E+02  0.00000E+00 -2.22611E+02  5.06263E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  1.18487E+02 -5.78382E+02  3.76731E+01 -6.16055E+02  8.87170E-32  1.50433E-29
+  1.11547E+01  3.20863E+01  2.25082E+01  3.54115E+01  2.79534E+02 -2.53936E+01 -7.57467E+02  0.00000E+00 -2.18543E+02  4.65489E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  1.20998E+02 -5.78382E+02  3.84715E+01 -6.16854E+02  2.42524E-32  3.10071E-30
+  1.29211E+01  3.12753E+01  2.23110E+01  3.34237E+01  2.76442E+02 -3.08831E+01 -7.46466E+02  0.00000E+00 -2.21169E+02  5.29117E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  1.06555E+02 -5.78383E+02  3.38794E+01 -6.12262E+02  2.80974E-32  5.54338E-31
+  1.23705E+01  2.96900E+01  2.22012E+01  3.69547E+01  2.79055E+02 -2.94380E+01 -7.46095E+02  0.00000E+00 -2.21986E+02  4.98514E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  1.04664E+02 -5.78382E+02  3.32781E+01 -6.11660E+02  3.19373E-32  1.02623E-30
+  9.95506E+00  3.44067E+01  2.37350E+01  3.53276E+01  2.76915E+02 -3.53127E+01 -7.38373E+02  0.00000E+00 -2.23894E+02  5.57950E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  1.17016E+02 -5.78381E+02  3.72052E+01 -6.15587E+02  8.96983E-34  1.94429E-30
+  1.15473E+01  3.24291E+01  1.94540E+01  3.32488E+01  2.74857E+02 -3.20218E+01 -7.36466E+02  0.00000E+00 -2.23895E+02  5.25930E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  1.14847E+02 -5.78383E+02  3.65155E+01 -6.14899E+02  1.16673E-31  1.82186E-29
+  1.24198E+01  3.04625E+01  1.88429E+01  3.41300E+01  2.77826E+02 -2.46856E+01 -7.42985E+02  0.00000E+00 -2.26189E+02  5.27986E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  1.09368E+02 -5.78382E+02  3.47737E+01 -6.13156E+02  1.05324E-32  7.44090E-30
+  1.03917E+01  3.40039E+01  2.07521E+01  3.52892E+01  2.81035E+02 -2.60540E+01 -7.44988E+02  0.00000E+00 -2.29214E+02  5.62757E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  1.08985E+02 -5.78382E+02  3.46518E+01 -6.13034E+02  1.23055E-32  3.34103E-31
+  1.25420E+01  3.65288E+01  1.88558E+01  3.38221E+01  2.78974E+02 -3.47658E+01 -7.33930E+02  0.00000E+00 -2.30768E+02  5.70801E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  1.26411E+02 -5.78383E+02  4.01926E+01 -6.18576E+02  2.10323E-32  2.13943E-30
+  9.61498E+00  3.13496E+01  1.79602E+01  3.43529E+01  2.79600E+02 -3.41090E+01 -7.29201E+02  0.00000E+00 -2.34057E+02  5.91342E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 168381120)
+  Initial temperature set to: 
+    160 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  1.20617E+02 -5.70212E+02  3.83503E+01 -6.08562E+02  9.83690E-32  2.86721E-29
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.00425E+01  3.58228E+01  1.97320E+01  3.64144E+01  2.76350E+02 -3.24263E+01 -7.30114E+02  0.00000E+00 -2.29510E+02  5.12571E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  1.26630E+02 -5.70214E+02  4.02622E+01 -6.10476E+02  3.49940E-32  8.17894E-30
+  1.01032E+01  3.56338E+01  2.18210E+01  3.59379E+01  2.81821E+02 -2.62070E+01 -7.49152E+02  0.00000E+00 -2.24702E+02  4.26776E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  1.29795E+02 -5.70214E+02  4.12683E+01 -6.11482E+02  8.18506E-32  1.13553E-29
+  1.22322E+01  3.51463E+01  2.03651E+01  3.42992E+01  2.76605E+02 -3.12519E+01 -7.38957E+02  0.00000E+00 -2.24322E+02  4.40055E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  1.13904E+02 -5.70213E+02  3.62160E+01 -6.06429E+02  1.26072E-32  9.98789E-32
+  1.20787E+01  3.96639E+01  2.28760E+01  3.33752E+01  2.78083E+02 -2.81826E+01 -7.49841E+02  0.00000E+00 -2.18848E+02  4.36643E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  1.26668E+02 -5.70212E+02  4.02741E+01 -6.10486E+02  9.33988E-33  1.14301E-30
+  1.22144E+01  3.20596E+01  2.35101E+01  3.67478E+01  2.79887E+02 -3.04177E+01 -7.44152E+02  0.00000E+00 -2.24736E+02  4.40005E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  1.16086E+02 -5.70213E+02  3.69097E+01 -6.07122E+02  3.05625E-32  1.17666E-31
+  1.31900E+01  3.87485E+01  2.07522E+01  3.62783E+01  2.78367E+02 -2.75672E+01 -7.48374E+02  0.00000E+00 -2.23557E+02  5.03953E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  1.26586E+02 -5.70213E+02  4.02480E+01 -6.10461E+02  1.24783E-32  7.24163E-30
+  1.34192E+01  3.63986E+01  2.31659E+01  3.20729E+01  2.77047E+02 -2.89926E+01 -7.46670E+02  0.00000E+00 -2.22715E+02  5.81302E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  1.26656E+02 -5.70212E+02  4.02704E+01 -6.10482E+02  4.14630E-32  1.09972E-29
+  1.05919E+01  3.57979E+01  1.99401E+01  3.53820E+01  2.74938E+02 -2.64884E+01 -7.39858E+02  0.00000E+00 -2.25744E+02  4.95842E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  1.24002E+02 -5.70213E+02  3.94265E+01 -6.09639E+02  7.46123E-32  3.22651E-29
+  1.01666E+01  3.96895E+01  1.82753E+01  3.58856E+01  2.82025E+02 -2.85559E+01 -7.44609E+02  0.00000E+00 -2.28108E+02  5.59126E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  1.23199E+02 -5.70213E+02  3.91711E+01 -6.09384E+02  3.05677E-32  8.11376E-30
+  8.69369E+00  3.59401E+01  1.89159E+01  3.71289E+01  2.78195E+02 -2.81365E+01 -7.33881E+02  0.00000E+00 -2.31192E+02  4.95164E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 2029762678)
+  Initial temperature set to: 
+    180 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  1.57562E+02 -5.54431E+02  5.00971E+01 -6.04528E+02  4.50392E-32  3.36864E-30
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.20131E+01  4.09591E+01  1.67946E+01  3.34848E+01  2.78220E+02 -2.81748E+01 -7.27179E+02  0.00000E+00 -2.36944E+02  6.29844E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  1.47564E+02 -5.54432E+02  4.69182E+01 -6.01351E+02  6.04194E-33  5.12482E-30
+  1.53517E+01  3.99867E+01  2.07581E+01  3.30115E+01  2.74862E+02 -3.21726E+01 -7.19499E+02  0.00000E+00 -2.40435E+02  6.78574E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  1.53136E+02 -5.54432E+02  4.86896E+01 -6.03122E+02  1.34456E-32  3.00708E-29
+  1.28648E+01  3.65844E+01  2.21661E+01  3.47564E+01  2.79981E+02 -2.90566E+01 -7.30643E+02  0.00000E+00 -2.35808E+02  6.03329E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  1.37297E+02 -5.54433E+02  4.36536E+01 -5.98086E+02  9.00140E-33  1.43584E-30
+  1.14632E+01  4.61836E+01  2.05266E+01  3.78134E+01  2.79166E+02 -3.16107E+01 -7.32007E+02  0.00000E+00 -2.35369E+02  5.74743E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  1.59071E+02 -5.54432E+02  5.05767E+01 -6.05009E+02  2.27926E-31  1.29957E-29
+  1.29342E+01  3.86579E+01  2.24624E+01  3.33970E+01  2.78691E+02 -2.78630E+01 -7.38452E+02  0.00000E+00 -2.30525E+02  5.68786E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  1.32525E+02 -5.54432E+02  4.21366E+01 -5.96569E+02  1.97403E-31  1.59800E-29
+  1.53931E+01  4.54129E+01  2.11668E+01  3.16939E+01  2.78592E+02 -2.35392E+01 -7.44083E+02  0.00000E+00 -2.26236E+02  5.03109E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  1.36658E+02 -5.54433E+02  4.34505E+01 -5.97883E+02  8.28934E-32  4.48528E-30
+  1.30303E+01  4.41120E+01  2.52430E+01  3.34951E+01  2.78048E+02 -2.92571E+01 -7.39514E+02  0.00000E+00 -2.27050E+02  4.00900E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  1.52770E+02 -5.54433E+02  4.85734E+01 -6.03006E+02  8.68602E-33  4.53570E-30
+  1.06380E+01  4.05208E+01  1.93677E+01  3.60804E+01  2.80648E+02 -2.97791E+01 -7.37305E+02  0.00000E+00 -2.27151E+02  3.97534E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  1.47583E+02 -5.54434E+02  4.69241E+01 -6.01358E+02  9.48276E-33  1.05058E-30
+  1.31405E+01  4.43453E+01  1.69629E+01  3.39393E+01  2.76269E+02 -3.01561E+01 -7.33241E+02  0.00000E+00 -2.28011E+02  5.39408E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  1.52780E+02 -5.54434E+02  4.85766E+01 -6.03011E+02  1.32140E-31  1.11655E-30
+  1.24105E+01  4.39007E+01  1.56553E+01  3.56777E+01  2.75813E+02 -2.86970E+01 -7.35378E+02  0.00000E+00 -2.28042E+02  5.64924E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 1277490684)
+  Initial temperature set to: 
+    200 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  1.71081E+02 -5.40759E+02  5.43953E+01 -5.95154E+02  5.74329E-32  2.21599E-29
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.37659E+01  4.87271E+01  1.63024E+01  3.43673E+01  2.76244E+02 -2.77565E+01 -7.33771E+02  0.00000E+00 -2.28800E+02  5.76693E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  1.58690E+02 -5.40756E+02  5.04557E+01 -5.91212E+02  3.90819E-32  1.58248E-29
+  1.34381E+01  4.93668E+01  2.07578E+01  3.42863E+01  2.80193E+02 -3.19980E+01 -7.35489E+02  0.00000E+00 -2.27983E+02  6.21572E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  1.58266E+02 -5.40759E+02  5.03209E+01 -5.91079E+02  4.40758E-32  3.68431E-30
+  1.20558E+01  4.70426E+01  2.46376E+01  3.63443E+01  2.79302E+02 -2.48833E+01 -7.42064E+02  0.00000E+00 -2.29117E+02  5.60270E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  1.59885E+02 -5.40758E+02  5.08355E+01 -5.91593E+02  2.16760E-32  1.75015E-30
+  1.44654E+01  4.83411E+01  2.01277E+01  3.33083E+01  2.75621E+02 -2.25038E+01 -7.40704E+02  0.00000E+00 -2.26008E+02  5.76011E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  1.70685E+02 -5.40758E+02  5.42693E+01 -5.95028E+02  6.95658E-32  1.41813E-29
+  1.50595E+01  5.12044E+01  1.85369E+01  3.22826E+01  2.80067E+02 -2.82121E+01 -7.42911E+02  0.00000E+00 -2.27049E+02  5.99382E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  1.71370E+02 -5.40757E+02  5.44871E+01 -5.95244E+02  3.51362E-32  3.48707E-30
+  1.18486E+01  4.58607E+01  2.30534E+01  3.81025E+01  2.75016E+02 -2.97394E+01 -7.34741E+02  0.00000E+00 -2.29771E+02  5.12665E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  1.88516E+02 -5.40758E+02  5.99388E+01 -6.00697E+02  7.37374E-33  3.04099E-31
+  1.29348E+01  3.59815E+01  2.36862E+01  3.63775E+01  2.81498E+02 -2.95832E+01 -7.35453E+02  0.00000E+00 -2.31916E+02  5.77662E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  1.70588E+02 -5.40757E+02  5.42385E+01 -5.94995E+02  6.22706E-32  1.41992E-29
+  1.39917E+01  4.39134E+01  2.33324E+01  3.33865E+01  2.77481E+02 -3.30296E+01 -7.27584E+02  0.00000E+00 -2.31936E+02  5.44963E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  1.91853E+02 -5.40757E+02  6.09996E+01 -6.01757E+02  2.63497E-32  8.75513E-31
+  1.38865E+01  3.83839E+01  2.35746E+01  3.37333E+01  2.75577E+02 -3.02655E+01 -7.31908E+02  0.00000E+00 -2.30127E+02  5.38920E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  1.79208E+02 -5.40758E+02  5.69793E+01 -5.97738E+02  6.31195E-32  7.66702E-30
+  1.38374E+01  4.46167E+01  2.15181E+01  3.69910E+01  2.78765E+02 -3.16892E+01 -7.43448E+02  0.00000E+00 -2.23057E+02  4.72837E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 327034389)
+  Initial temperature set to: 
+    220 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  2.07985E+02 -5.27585E+02  6.61288E+01 -5.93714E+02  2.40126E-31  1.04041E-29
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.56984E+01  4.76706E+01  2.29940E+01  3.48878E+01  2.79068E+02 -3.04740E+01 -7.46621E+02  0.00000E+00 -2.21821E+02  4.88323E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  1.99901E+02 -5.27584E+02  6.35586E+01 -5.91142E+02  1.82293E-31  2.81174E-29
+  1.72191E+01  4.53287E+01  2.25796E+01  3.44410E+01  2.78926E+02 -2.57171E+01 -7.48563E+02  0.00000E+00 -2.19979E+02  4.62125E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  1.92139E+02 -5.27586E+02  6.10906E+01 -5.88676E+02  1.05088E-31  1.74842E-30
+  1.29273E+01  4.42394E+01  2.88077E+01  3.96357E+01  2.82659E+02 -2.74229E+01 -7.59875E+02  0.00000E+00 -2.13378E+02  3.73082E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  1.83909E+02 -5.27586E+02  5.84739E+01 -5.86060E+02  2.49333E-32  2.26438E-30
+  1.60278E+01  5.19428E+01  2.43315E+01  3.67043E+01  2.76241E+02 -2.89178E+01 -7.51419E+02  0.00000E+00 -2.14139E+02  3.16913E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  1.83574E+02 -5.27585E+02  5.83676E+01 -5.85953E+02  1.14147E-32  2.10375E-31
+  1.50203E+01  5.80992E+01  2.41995E+01  3.38100E+01  2.77675E+02 -3.30229E+01 -7.48845E+02  0.00000E+00 -2.17182E+02  4.29272E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  1.73687E+02 -5.27584E+02  5.52239E+01 -5.82808E+02  9.95247E-32  1.90998E-29
+  1.57816E+01  5.67561E+01  2.21997E+01  3.29093E+01  2.80177E+02 -2.87899E+01 -7.42133E+02  0.00000E+00 -2.24941E+02  5.23180E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  2.05435E+02 -5.27586E+02  6.53183E+01 -5.92904E+02  6.88737E-32  1.06972E-29
+  1.32062E+01  4.28969E+01  2.73865E+01  3.62209E+01  2.80932E+02 -2.94658E+01 -7.45733E+02  0.00000E+00 -2.22761E+02  4.41223E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  1.89488E+02 -5.27584E+02  6.02477E+01 -5.87832E+02  4.13471E-32  2.99399E-30
+  1.49016E+01  4.65752E+01  2.73375E+01  3.61855E+01  2.81469E+02 -3.19503E+01 -7.43693E+02  0.00000E+00 -2.24219E+02  5.56143E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  2.03625E+02 -5.27584E+02  6.47426E+01 -5.92326E+02  9.23228E-32  2.55402E-29
+  1.45463E+01  4.08039E+01  2.89255E+01  3.60115E+01  2.79943E+02 -3.22584E+01 -7.35636E+02  0.00000E+00 -2.30106E+02  5.44274E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  2.06934E+02 -5.27586E+02  6.57949E+01 -5.93381E+02  4.34887E-32  6.43249E-31
+  1.17875E+01  4.25300E+01  2.94053E+01  3.75296E+01  2.76583E+02 -3.08786E+01 -7.33595E+02  0.00000E+00 -2.32054E+02  5.31095E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 1088888635)
+  Initial temperature set to: 
+    240 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  2.05401E+02 -5.18132E+02  6.53074E+01 -5.83439E+02  1.54875E-31  2.53241E-31
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.42980E+01  5.12424E+01  2.87088E+01  3.59641E+01  2.78973E+02 -2.82597E+01 -7.37091E+02  0.00000E+00 -2.31639E+02  4.36485E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  2.15289E+02 -5.18133E+02  6.84513E+01 -5.86584E+02  2.31471E-32  4.48664E-30
+  1.43923E+01  4.82071E+01  2.58325E+01  3.56845E+01  2.76492E+02 -2.27472E+01 -7.42261E+02  0.00000E+00 -2.25903E+02  3.71784E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  2.25949E+02 -5.18134E+02  7.18405E+01 -5.89975E+02  9.66619E-32  4.94625E-29
+  1.48316E+01  4.01134E+01  2.68095E+01  3.49802E+01  2.82461E+02 -2.43697E+01 -7.38588E+02  0.00000E+00 -2.30307E+02  4.09438E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  2.25932E+02 -5.18132E+02  7.18352E+01 -5.89967E+02  8.44088E-32  3.93838E-30
+  1.43993E+01  4.80195E+01  2.17452E+01  3.09717E+01  2.77731E+02 -2.43781E+01 -7.34568E+02  0.00000E+00 -2.29887E+02  5.99961E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  2.13067E+02 -5.18133E+02  6.77447E+01 -5.85878E+02  4.65181E-32  2.68664E-29
+  1.35031E+01  5.35790E+01  2.11041E+01  3.53189E+01  2.75640E+02 -3.18422E+01 -7.27786E+02  0.00000E+00 -2.32013E+02  6.61788E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  1.97101E+02 -5.18134E+02  6.26685E+01 -5.80802E+02  9.71918E-32  8.04388E-30
+  1.30314E+01  5.01708E+01  2.39449E+01  4.07326E+01  2.79760E+02 -2.92605E+01 -7.30769E+02  0.00000E+00 -2.34854E+02  6.44132E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  2.01212E+02 -5.18133E+02  6.39754E+01 -5.82109E+02  2.79275E-32  3.92459E-30
+  1.61409E+01  4.55371E+01  2.42788E+01  3.72475E+01  2.78909E+02 -2.86174E+01 -7.29002E+02  0.00000E+00 -2.33656E+02  7.05400E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  1.71697E+02 -5.18132E+02  5.45910E+01 -5.72723E+02  5.98222E-32  1.70208E-29
+  1.98295E+01  5.24601E+01  2.25033E+01  3.74532E+01  2.79941E+02 -3.14882E+01 -7.20428E+02  0.00000E+00 -2.39854E+02  6.85935E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  1.95424E+02 -5.18134E+02  6.21351E+01 -5.80269E+02  5.99130E-32  8.08429E-30
+  1.11392E+01  5.91779E+01  2.06833E+01  3.62006E+01  2.78125E+02 -3.02695E+01 -7.16288E+02  0.00000E+00 -2.44982E+02  5.94449E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  2.02745E+02 -5.18133E+02  6.44629E+01 -5.82596E+02  1.55455E-32  9.58091E-31
+  2.09216E+01  5.18087E+01  2.15678E+01  3.17481E+01  2.76576E+02 -3.38717E+01 -7.13763E+02  0.00000E+00 -2.43794E+02  6.21062E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 1527679467)
+  Initial temperature set to: 
+    260 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  2.54105E+02 -4.89181E+02  8.07928E+01 -5.69974E+02  1.28366E-31  3.49835E-30
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.50113E+01  6.12042E+01  2.27221E+01  3.73609E+01  2.78908E+02 -3.15489E+01 -7.15230E+02  0.00000E+00 -2.44024E+02  5.62201E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  2.37302E+02 -4.89181E+02  7.54503E+01 -5.64631E+02  5.25536E-32  1.33535E-29
+  2.11456E+01  5.73697E+01  2.37936E+01  3.73055E+01  2.80726E+02 -3.07396E+01 -7.15382E+02  0.00000E+00 -2.44397E+02  5.54665E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  2.33298E+02 -4.89180E+02  7.41774E+01 -5.63358E+02  2.28464E-32  3.05992E-30
+  2.19264E+01  5.57670E+01  2.95089E+01  3.66096E+01  2.74757E+02 -2.95200E+01 -7.12582E+02  0.00000E+00 -2.46106E+02  6.28210E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  2.48300E+02 -4.89182E+02  7.89471E+01 -5.68129E+02  5.83286E-32  5.62977E-30
+  1.71737E+01  6.16685E+01  2.58868E+01  3.83180E+01  2.75438E+02 -3.06117E+01 -7.13301E+02  0.00000E+00 -2.48388E+02  5.68717E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  2.29900E+02 -4.89181E+02  7.30969E+01 -5.62278E+02  2.04601E-32  1.01069E-29
+  1.92484E+01  7.23659E+01  1.88741E+01  3.45372E+01  2.81013E+02 -3.21679E+01 -7.15782E+02  0.00000E+00 -2.46227E+02  5.86014E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  2.55503E+02 -4.89180E+02  8.12373E+01 -5.70418E+02  4.41829E-32  1.62492E-30
+  2.01015E+01  5.66958E+01  2.29141E+01  3.38692E+01  2.75419E+02 -2.25201E+01 -7.12935E+02  0.00000E+00 -2.49793E+02  5.83118E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  2.36629E+02 -4.89180E+02  7.52364E+01 -5.64416E+02  2.26836E-32  2.05612E-31
+  1.79819E+01  5.46014E+01  2.89175E+01  3.61478E+01  2.77725E+02 -3.01947E+01 -7.08458E+02  0.00000E+00 -2.47811E+02  6.67433E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  2.52999E+02 -4.89181E+02  8.04412E+01 -5.69622E+02  1.06492E-32  1.76851E-30
+  1.89521E+01  5.21657E+01  2.85006E+01  3.60561E+01  2.74508E+02 -3.18255E+01 -7.07488E+02  0.00000E+00 -2.45326E+02  4.83489E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  2.55355E+02 -4.89181E+02  8.11904E+01 -5.70371E+02  3.02084E-32  7.18696E-31
+  1.67537E+01  6.68367E+01  2.56620E+01  3.17916E+01  2.75916E+02 -2.59212E+01 -7.21181E+02  0.00000E+00 -2.46446E+02  6.21622E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  2.63557E+02 -4.89182E+02  8.37981E+01 -5.72980E+02  9.91498E-32  3.25792E-29
+  1.42915E+01  6.24341E+01  2.63541E+01  3.78982E+01  2.76744E+02 -2.47760E+01 -7.25562E+02  0.00000E+00 -2.46540E+02  6.17541E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask INPU                                                
+ Beginning DYNAMICS subtask RUN                                                 
+============================================================================
+============================================================================
+                         Parameters for DYNAMICS run                        
+============================================================================
+============================================================================
+
+Number of steps: 1000
+Time step (ps): 0.0005
+Results printed every 100 steps
+Initial velocities drawn from Gaussian distribution (seed = 1026492221)
+  Initial temperature set to: 
+    280 for species SPECIES1
+SHAKE and RATTLE will be applied (tolerance = 1e-07)
+Constant energy dynamics (no temperature scaling)
+Constant volume dynamics
+Random number seed: 58085056
+Only coordinates written to trajectory file every 5 steps
+============================================================================
+============================================================================
+%IMPACT-I (runmd): Using the reversible RESPA integrator with 2 stages
+%IMPACT-I (runmd): Steps for stage #2: 8
+%IMPACT-I (runmd): Translational and rotational motions for the system are removed
+
+
+ Step number:        100         Non-bonded count:     7806
+ Temp         E-tot        E-kin        E-pot        ETCM         ERCM        
+  2.48996E+02 -4.90010E+02  7.91684E+01 -5.69178E+02  1.26192E-31  1.96305E-29
+ Bond         Angle        Dihedral     LJ-14        EL-14        LJ - 6-12    Electrost    HB - 1012    RxnFld-AGBNP NPolar-AGBNP
+  1.69245E+01  6.32432E+01  2.90607E+01  3.46995E+01  2.77877E+02 -2.94494E+01 -7.19536E+02  0.00000E+00 -2.47740E+02  5.74230E+00
+
+
+ Step number:        200         Non-bonded count:     7806
+  2.54609E+02 -4.90008E+02  8.09531E+01 -5.70961E+02  1.45154E-31  8.57992E-30
+  2.41161E+01  5.49204E+01  2.57879E+01  3.36399E+01  2.80027E+02 -3.28784E+01 -7.08540E+02  0.00000E+00 -2.52775E+02  4.74249E+00
+
+
+ Step number:        300         Non-bonded count:     7806
+  2.37101E+02 -4.90008E+02  7.53863E+01 -5.65394E+02  2.52462E-31  1.41606E-30
+  2.05018E+01  6.20691E+01  2.52231E+01  3.53917E+01  2.73902E+02 -2.89387E+01 -7.07211E+02  0.00000E+00 -2.50962E+02  4.62964E+00
+
+
+ Step number:        400         Non-bonded count:     7806
+  2.52357E+02 -4.90007E+02  8.02369E+01 -5.70244E+02  3.67073E-32  4.07249E-30
+  2.38263E+01  5.30381E+01  2.36880E+01  3.67113E+01  2.78679E+02 -2.59765E+01 -7.12178E+02  0.00000E+00 -2.53151E+02  5.11856E+00
+
+
+ Step number:        500         Non-bonded count:     7806
+  2.45933E+02 -4.90008E+02  7.81946E+01 -5.68203E+02  4.84423E-33  1.24414E-30
+  2.05539E+01  6.05416E+01  2.42354E+01  3.78513E+01  2.83494E+02 -3.00661E+01 -7.16416E+02  0.00000E+00 -2.54638E+02  6.24149E+00
+
+
+ Step number:        600         Non-bonded count:     7806
+  2.40197E+02 -4.90009E+02  7.63708E+01 -5.66380E+02  2.79653E-32  8.81415E-30
+  2.38788E+01  6.09100E+01  2.62296E+01  3.50588E+01  2.76828E+02 -3.42428E+01 -7.07585E+02  0.00000E+00 -2.54898E+02  7.44045E+00
+
+
+ Step number:        700         Non-bonded count:     7806
+  2.34690E+02 -4.90010E+02  7.46199E+01 -5.64630E+02  1.34628E-31  1.38694E-29
+  1.88743E+01  6.08886E+01  3.13100E+01  3.70636E+01  2.76181E+02 -3.06051E+01 -7.16048E+02  0.00000E+00 -2.48519E+02  6.22445E+00
+
+
+ Step number:        800         Non-bonded count:     7806
+  2.65896E+02 -4.90008E+02  8.45417E+01 -5.74549E+02  1.99820E-31  3.77090E-30
+  1.97496E+01  5.35581E+01  2.60445E+01  3.64240E+01  2.77131E+02 -3.17989E+01 -7.22041E+02  0.00000E+00 -2.40112E+02  6.49551E+00
+
+
+ Step number:        900         Non-bonded count:     7806
+  2.53450E+02 -4.90009E+02  8.05845E+01 -5.70593E+02  1.31696E-32  2.42814E-30
+  2.02854E+01  5.22930E+01  3.10975E+01  3.86264E+01  2.85083E+02 -3.04473E+01 -7.33603E+02  0.00000E+00 -2.39394E+02  5.46592E+00
+
+
+ Step number:       1000         Non-bonded count:     7806
+  2.47807E+02 -4.90009E+02  7.87906E+01 -5.68800E+02  6.56659E-32  2.69274E-29
+  1.36042E+01  6.69248E+01  3.03387E+01  3.87320E+01  2.81245E+02 -3.03632E+01 -7.36039E+02  0.00000E+00 -2.38265E+02  5.02235E+00
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: DYNA
+ Beginning DYNAMICS subtask WRIT                                                
+%IMPACT-I (openwt): Request to open FORMATTED file linearwt_0.rst on unit  21
+      Current coord./veloc. written to file: linearwt_0.rst
+      Box dimensions not written
+ Beginning DYNAMICS subtask WRIT                                                
+%IMPACT-I (info): At line  60
+ %IMPACT-I: Species     1  written to SQL file linearwt_mintherm.dms
+ Beginning DYNAMICS subtask QUIT                                                
+
+ ---------------------------------
+ Beginning IMPACT task: END 
+
+
+Final Energy Reports:
+------------------------------------
+ Total Energy of the system...... -4.90009E+02 kcal/mol
+ Total Potential Energy.......... -5.68800E+02 kcal/mol
+ Total Kinetic Energy............  7.87906E+01 kcal/mol
+ Temperature of the system.......      247.807 K
+ Bond Stretch Energy.............  1.36042E+01 kcal/mol
+ Angle Bending Energy............  6.69248E+01 kcal/mol
+ Torsion Angle Energy............  3.03387E+01 kcal/mol
+ Restraining Energy for Torsions.  0.00000E+00 kcal/mol
+ 1,4 Lennard Jones Energy........  3.87320E+01 kcal/mol
+ 1,4 Electrostatic Energy........  2.81245E+02 kcal/mol
+ Lennard Jones Energy............ -3.03632E+01 kcal/mol
+ Electrostatic Energy............ -7.36039E+02 kcal/mol
+ H-bond Energy...................  0.00000E+00 kcal/mol
+ AGBNP Solvation Energy ......... -2.33243E+02 kcal/mol
+ AGBNP Solvation Energy (polar).. -2.38265E+02 kcal/mol
+ AGBNP Solv. Energy (non-polar)..  2.99455E-01 kcal/mol
+ AGBNP Solv. Energy (correction).  4.72290E+00 kcal/mol
+ 
+%IMPACT-I (memstat): Temporary storage statistics
+                     real*8:        145584
+                     integer*4:     536154
+                     char*4:           183
+%IMPACT-I (memstat): Total dynamics storage was      3.31 MB
+ Exiting IMPACT execution environment 
+ Date: Monday, January 05 2015, at 13:43:08 EST
+%IMPACT-I (timit): Total CPU time =      69.35 seconds (   1.2 minutes)

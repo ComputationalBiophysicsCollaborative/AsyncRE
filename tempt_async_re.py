@@ -33,6 +33,10 @@ class tempt_async_re_job(impact_job):
         temperatures = self.keywords.get('TEMPERATURES').split(',')
         #build parameters for the lambda/temperatures combined states
         self.nreplicas = self._buildStates(temperatures)
+        #executive file's directory
+        if self.keywords.get('JOB_TRANSPORT') is 'SSH':
+            if self.keywords.get('EXEC_DIRECTORY') is None:
+                self._exit("EXEC DIRECTORY needs to be specified")
 
     def _buildStates(self,temperatures):
         self.stateparams = []
