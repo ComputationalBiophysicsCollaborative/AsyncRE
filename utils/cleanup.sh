@@ -14,7 +14,7 @@ export SCHRODINGER
 for (( ir=$rb; ir<=$re; ir++ ))
 do
    cd r$ir
-   $SCHRODINGER/run $scripts/cleanup.py $jobname $imp_version && rm -f ${jobname}_*.{inp,err,log,trj,idx}
+   $SCHRODINGER/run $scripts/cleanup.py $jobname $imp_version && rm -f ${jobname}_*.{err,log,trj,idx}
    echo "Finished the cleanup in r$ir"
    cd ../
 done

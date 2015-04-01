@@ -99,14 +99,20 @@ for r in cycles:
             print "Warning: Cannot open output file %s" % file
 fout.close()
 
-#delete .rst files
+#delete .rst and .inp files
 for r in cycles:
         #construct file name
-        file = "%s_%d.rst" % (basename,r)
-        print file
+        rstfile = "%s_%d.rst" % (basename,r)
+        inpfile = "%s_%d.inp" % (basename,r)
+        print rstfile
+        print inpfile
         try:
-            os.remove(file)
+            os.remove(rstfile)
         except:
-            print "Warning: Cannot open output file %s" % file
+            print "Warning: Cannot open rst file %s" % rstfile
+        try:
+            os.remove(inpfile)
+        except:
+            print "Warning: Cannot open inp file %s" % inpfile
 
 
