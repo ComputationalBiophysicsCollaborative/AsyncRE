@@ -1,0 +1,44 @@
+#
+#   A Simple README file for using the scripts for analysis 
+#   
+#   Junchao Xia, Apr. 1, 2015
+
+1) clean up and merge the intermediate files 
+
+   a) clean up using a list of folders
+      ~/AsyncRE_git/utils/cleanupFiles.sh   /opt/apps/Schrodinger/2013-3 ~/AsyncRE_git/utils "hivin-avx17556-3 hivin-avx38780-0-1  hivin-avx38789-1-1 hivin-avx38783-1-1  hivin-avx40911-0" 0 19
+      ~/AsyncRE_git/utils/cleanupFiles.sh   /opt/apps/Schrodinger/2013-3 ~/AsyncRE_git/utils "heptanoate1D" 0 15
+
+   b) clean up using wildcard
+      ~/AsyncRE_git/utils/cleanupFilesLS.sh /opt/apps/Schrodinger/2013-3 ~/AsyncRE_git/utils "hivin-test-*" 0 19
+      ~/AsyncRE_git/utils/cleanupFilesLS.sh /opt/apps/Schrodinger/2013-3 ~/AsyncRE_git/utils "avx38783-*-0" 0 19
+ 
+
+2) install R and install UWHAM using "install.packages("UWHAM")"
+
+3) extract the related energies and macroquantities
+
+   a) extract using a list of folders
+      ~/AsyncRE_git/utils/extractLBEdata.sh ~/AsyncRE_git/utils "hivin-avx17556-3 hivin-avx38780-0-1  hivin-avx38789-1-1 hivin-avx38783-1-1  hivin-avx40911-0" 0 19 
+      ~/AsyncRE_git/utils/extractLBEdata.sh ~/AsyncRE_git/utils "heptanoate1D" 0 15
+
+   b) extract using wildcard
+      ~/AsyncRE_git/utils/extractLBEdataLS.sh ~/AsyncRE_git/utils "hivin-test-*" 0 19
+      ~/AsyncRE_git/utils/extractLBEdataLS.sh ~/AsyncRE_git/utils "avx38783-*-0" 0 19
+
+   c) merge results from different initial structures
+      ~/AsyncRE_git/utils/mergeLBEdataLS.sh avx38783-0 "avx38783-*-0" 0 19 1400 1400
+
+  
+4) calculate the binding free energies
+
+   a) using a list of foders
+      ~/AsyncRE_git/utils/getBFE_cvg.sh  ~/AsyncRE_git/utils "hivin-avx17556-3 hivin-avx38780-0-1  hivin-avx38789-1-1 hivin-avx38783-1-1  hivin-avx40911-0" ~/projects/boincimpact/wcg/input/hiv5ligs.cntl 
+
+   b) using wildcard (need create the folder of input and put asyncRE_analysis.cntl under it)  
+      ~/AsyncRE_git/utils/getBFE_cvgMP.sh ~/AsyncRE_git/utils hivin-test "hivin-test-??" 0 19 1 8 100 30
+      ~/AsyncRE_git/utils/getBFE_cvgMP.sh ~/AsyncRE_git/utils avx38783-0 "avx38783-*-0" 0 19 1 14 100 10
+
+ 
+ 
+#   ~/AsyncRE_git/utils/getLBE_block.sh ~/async_scripts "heptanoate1D" 1.0 300
