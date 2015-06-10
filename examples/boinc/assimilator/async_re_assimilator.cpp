@@ -44,7 +44,7 @@ using std::string;
 int write_error(char* p) {
     static FILE* f = 0;
     if (!f) {
-        f = fopen(config.project_path("sample_results/errors"), "a");
+        f = fopen(config.project_path("async_re/errors"), "a");
         if (!f) return ERR_FOPEN;
     }
     fprintf(f, "%s", p);
@@ -68,7 +68,7 @@ char *asyncre_repldir(const char *wuname, char **jobname, int *replica, int *cyc
   char bufh[1024];
 
   // error outputs
-  strncpy(path,config.project_path("sample_results"),MAXPATHLEN-1);
+  strncpy(path,config.project_path("async_re"),MAXPATHLEN-1);
   *jobname = NULL;
   *replica = -1;
   *cycle = -1;
@@ -105,8 +105,8 @@ char *asyncre_repldir(const char *wuname, char **jobname, int *replica, int *cyc
   *cycle = atoi(match);
 
   //prepares directory
-  boinc_mkdir(config.project_path("%s/%s", "sample_results", job));
-  dest_dir = config.project_path("%s/%s/r%d", "sample_results", job, *replica);
+  boinc_mkdir(config.project_path("%s/%s", "async_re", job));
+  dest_dir = config.project_path("%s/%s/r%d", "async_re", job, *replica);
   boinc_mkdir(dest_dir);
   strncpy(path,dest_dir,MAXPATHLEN-1);
 
@@ -128,8 +128,8 @@ int assimilate_handler(
     int replica, cycle;
     bool asyncre_mode = true;
 
-    retval = boinc_mkdir(config.project_path("sample_results"));
-    if (retval) return retval;
+    // retval = boinc_mkdir(config.project_path("async_re"));
+    // if (retval) return retval;
 
     //retrieve replica directory from wu name
     asyncre_mode = true;
@@ -152,26 +152,60 @@ int assimilate_handler(
 
 	    if(asyncre_mode){
 
-	      if(i==0){
-		//out file
-		copy_path = config.project_path("sample_results/%s/r%d/%s_%d.out", jobname, replica, jobname, cycle);
-	      }else if(i==1){
-		//dms file
-		copy_path = config.project_path("sample_results/%s/r%d/%s_%d.dms", jobname, replica, jobname, cycle);
-	      }else if(i==2){
-		//rst file
-		copy_path = config.project_path("sample_results/%s/r%d/%s_%d.rst", jobname, replica, jobname, cycle);	
+	      if (n == 3){ // regular output
+
+		if(i==0){
+		  //out file
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d.out", jobname, replica, jobname, cycle);
+		}else if(i==1){
+		  //dms file
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d.dms", jobname, replica, jobname, cycle);
+		}else if(i==2){
+		  //rst file
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d.rst", jobname, replica, jobname, cycle);	
+		}else{
+		  //?
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d_%d",  jobname, replica, jobname, cycle, i);
+		}
+
+	      }else if(n == 4){ // BEDAM output
+
+
+		if(i==0){
+		  //out file
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d.out", jobname, replica, jobname, cycle);
+		}else if(i==1){
+		  //dms file 1 (receptor)
+		  copy_path = config.project_path("async_re/%s/r%d/%s_rcpt_%d.dms", jobname, replica, jobname, cycle);
+		}else if(i==2){
+		  //dms file 2 (ligand)
+		  copy_path = config.project_path("async_re/%s/r%d/%s_lig_%d.dms", jobname, replica, jobname, cycle);
+		}else if(i==3){
+		  //rst file
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d.rst", jobname, replica, jobname, cycle);	
+		}else{
+		  //?
+		  copy_path = config.project_path("async_re/%s/r%d/%s_%d_%d",  jobname, replica, jobname, cycle, i);
+		}
+
 	      }else{
-		//?
-		copy_path = config.project_path("sample_results/%s/r%d/%s_%d_%d",  jobname, replica, jobname, cycle, i);
+
+		// unexpected number of async_re output files
+		if (n==1) {
+		  copy_path = config.project_path("async_re/%s", wu.name);
+		} else {
+		  copy_path = config.project_path("async_re/%s_%d", wu.name, i);
+		}
+		
 	      }
 
 	    }else{
 
+	      // non-async_re output 
 	      if (n==1) {
-                copy_path = config.project_path("sample_results/%s", wu.name);
+                copy_path = config.project_path("async_re/%s", wu.name);
 	      } else {
-                copy_path = config.project_path("sample_results/%s_%d", wu.name, i);
+                copy_path = config.project_path("async_re/%s_%d", wu.name, i);
 	      }
 
 	    }
@@ -184,14 +218,14 @@ int assimilate_handler(
         }
         if (!file_copied) {
             copy_path = config.project_path(
-                "sample_results/%s_%s", wu.name, "no_output_files"
+                "async_re/%s_%s", wu.name, "no_output_files"
             );
             FILE* f = fopen(copy_path, "w");
             fclose(f);
 
 	    // flag error
 	    if(asyncre_mode){
-	      copy_path = config.project_path("sample_results/%s/r%d/%s_%d.failed", jobname, replica, jobname, cycle);
+	      copy_path = config.project_path("async_re/%s/r%d/%s_%d.failed", jobname, replica, jobname, cycle);
 	      f = fopen(copy_path, "w");
 	      fclose(f);
 	      sprintf(buf, "warning: cycle %d of replica %d of job %s (work unit = %s) failed with error: 0x%x\n", cycle, replica, jobname, wu.name, wu.error_mask);
@@ -205,7 +239,7 @@ int assimilate_handler(
       if(asyncre_mode){
 	// create an empty .failed file so it will be detected as a failure
         const char *copy_path;
-	copy_path = config.project_path("sample_results/%s/r%d/%s_%d.failed", jobname, replica, jobname, cycle);
+	copy_path = config.project_path("async_re/%s/r%d/%s_%d.failed", jobname, replica, jobname, cycle);
 	FILE *f = fopen(copy_path, "w");
 	fclose(f);
 	sprintf(buf, "warning: cycle %d of replica %d of job %s (work unit = %s) failed with error: 0x%x\n", cycle, replica, jobname, wu.name, wu.error_mask);
