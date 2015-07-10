@@ -97,21 +97,20 @@ Next, change the binding.cntl file to reflect your system. Remember to change th
 
     EXEC_DIRECTORY="/path/to/your/academic-impact"
 
-Then in the virtual python environment, run
+To run the example, enter the Python virtual environment and execute BEDAM Tempt:
 
+    . ~/venv/bin/activate
     python ../../bedamtempt_async_re.py binding.cntl
 
 ## Test with Temperature ASyncRE example
+Testing the Temperature ASyncRE example is the same as the BEDAM example.
 
-To execute the Temperature SyncRE
+Change the nodefile and linearwt_asyncre.cntl files in the same way as the BEDAM example.
 
-In the folder examples/temperature_RE
+Enter the python virtual environment and execute linearwt:
 
-Changing the nodefile and linearwt_asyncre.cnt files to your setup
-
-Then in the virtual python, run
-
-    python ../../tempt_async_re.py linearwt_asyncre.cntl
+    .~/venv/bin/activate
+    python ../../bedamtempt_async_re.py linearwt_asyncre.cntl
 
 For additional examples:
 
