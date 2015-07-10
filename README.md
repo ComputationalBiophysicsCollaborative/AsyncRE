@@ -1,5 +1,4 @@
-ASyncRE
-========
+# ASyncRE
 
 ASynchronous Replica Exchange (ASyncRE) is an extensible Python package enabling file-based larg-scale asynchronous parallel replica exchange molecular simulations on grid computing networks consisting of heterogeneous and distributed computing environments as well as on homogeneous high performance clusters, using the job transporting of SSH or BOINC distributed network. 
 
@@ -21,16 +20,14 @@ export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 
 The runimpact template and nodefile template can be found in the examples.
 
-Web Pages
----------
+## Web Pages
 
 ASyncRE: https://github.com/ComputationalBiophysicsCollaborative/AsyncRE
 
-Installation
-------------
+## Installation
 
-Creating a Python virtual environment & installing dependencies
-====
+### Create a Python virtual environment & install dependencies
+
 virtualenv can be used to create a virtual Python environmant for ASyncRE. Using virtualenv will
 make it easier to maintain the Python dependencies for ASyncRE.
 
@@ -53,8 +50,8 @@ Obtain python-pip if you do not already have it. Then:
     pip install scp
     pip install paramiko
 
-Installing ASyncRE
-===
+### Install ASyncRE
+
 Do the following while in virtualenv:
 
     git clone https://github.com/ComputationalBiophysicsCollaborative/AsyncRE.git
@@ -72,8 +69,7 @@ Installation from the distribution archive:
     cd dist
     pip install async_re-<version>.tar.gz
 
-Test with BEDAM ASyncRE example
-----
+### Test with BEDAM ASyncRE example
 
 To execute the BEDAM ASyncRE software:
 
@@ -105,8 +101,7 @@ Then in the virtual python environment, run
 
     python ../../bedamtempt_async_re.py binding.cntl
 
-Test Temperature ASyncRE
-----
+## Test with Temperature ASyncRE example
 
 To execute the Temperature SyncRE
 
@@ -118,6 +113,6 @@ Then in the virtual python, run
 
     python ../../tempt_async_re.py linearwt_asyncre.cntl
 
-* For additional examples:
+For additional examples:
 
     cd AsyncRE/examples
