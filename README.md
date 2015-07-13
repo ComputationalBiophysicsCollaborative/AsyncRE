@@ -93,7 +93,7 @@ Convenientlly, this nodefile can be automatically generated in the bedam_workflo
 
 Each line in the nodefile should correspond to a single thread. So if you are using 4 cores, you should have 2 entries in the nodfile. You can leave the username field blank.
 
-Next, change the binding.cntl file to reflect your system. Remember to change the EXEC_DIRECTORY filed:
+Next, change the binding.cntl file to reflect your system. Remember to change the EXEC_DIRECTORY field:
 
     EXEC_DIRECTORY="/path/to/your/academic-impact"
 
