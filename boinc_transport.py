@@ -12,6 +12,8 @@ import subprocess
 
 from transport import Transport
 
+operational_error = MySQLdb.OperationalError
+
 class boinc_transport(Transport):
     """
     Class to launch and monitor jobs through a BOINC project
@@ -133,7 +135,7 @@ Enqueues a job based on provided job info.
 
         return 1
 
-    def poll(self):
+    def poll(self, error_wait=10, timeout=86400):
         self.logger.info("Polling BOINC DB")
 
         wuids = self.replica_status.keys()
@@ -142,8 +144,16 @@ Enqueues a job based on provided job info.
             self.logger.info("Polling BOINC DB complete! Didn't find any wuids, though")
             return
 
-        self.boinc_db = MySQLdb.connect(user=self.db_user, passwd=self.db_pwd,
-                                        db=self.db_name)
+        try:
+            self.boinc_db = MySQLdb.connect(user=self.db_user, passwd=self.db_pwd,
+                                            db=self.db_name)
+        except operational_error as e:
+            self.logger.warning("poll(): Received operational error %d: %s.", e.errno, e.strerror)
+            self.logger.warning("poll(): Trying one more time in %ds.", error_wait)
+            time.sleep(error_wait)
+            self.boinc_db = MySQLdb.connect(user=self.db_user, passwd=self.db_pwd,
+                                            db=self.db_name)
+
         if not self.boinc_db:
             self.logger.critical("poll(): Unable to open connection with mysql db %s", self.db_name)
             sys.exit(1)
@@ -181,6 +191,14 @@ Enqueues a job based on provided job info.
 
         self.boinc_db.close()
         self.logger.info("Polling BOINC DB complete!")
+
+        #2015/09/09 WFF
+        #check to see if boinc.stat has been changed recently
+        curtime = time.mktime(time.localtime())
+        statime = os.stat("%s_boinc.stat" % self.jobname).st_mtime
+        if curtime > statime + timeout:
+            self.logger.warning("%s_boinc.stat has not been updated in more than a day", self.jobname)
+            self.logger.warning("Is everything ok with the server and/or this job?")
 
     def ProcessJobQueue(self, mintime, maxtime):
         """
