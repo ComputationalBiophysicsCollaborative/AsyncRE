@@ -11,7 +11,7 @@ async_scripts=$2
 job_dirs=$3
 rbgn=$4
 rend=$5
-
+tar_type=$6
 root_path=`pwd`
 
 echo "-------------------------------------------------------------------------------"
@@ -22,7 +22,7 @@ for folder in $job_dirs; do
     if [ -d $folder ]; then
         cd $folder
         echo "working in the folder of $folder"
-           $async_scripts/cleanup.sh $schrodinger_path $async_scripts $folder academic $rbgn $rend
+           $async_scripts/cleanup.sh $schrodinger_path $async_scripts $folder $tar_type $rbgn $rend
         cd $root_path
     else
         echo "$folder does not exist."

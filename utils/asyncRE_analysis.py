@@ -91,7 +91,10 @@ class asyncRE_analysis:
         self.temperatures = self.keywords.get('TEMPERATURES').split(',')
         self.ntemp = len(self.temperatures)
         #build parameters for the lambda/temperatures combined states
-        self.nreplicas = self._buildBEDAMStates()
+	if self.keywords.get('NREPLICAS') is None:
+ 	    self.nreplicas = self._buildBEDAMStates()
+	else :
+            self.nreplicas = int(self.keywords.get('NREPLICAS'))
 
     def _buildBEDAMStates(self):
         self.stateparams = []

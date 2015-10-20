@@ -24,11 +24,11 @@ if(len(items) < 1):
     sys.exit(-1)
 
 basename = items[0]
-imp_version = items[1]
+tar_type = items[1]
 
 # get all cycle number 
 cycles = []
-if imp_version == "academic" :
+if tar_type == "dms" :
     dms = "%s_*.dms" % basename
     outdms_lig = basename + "_lig.tar"
     outdms_rcpt =  basename + "_rcpt.tar"
@@ -36,6 +36,15 @@ if imp_version == "academic" :
     print 1,dms_files
     to_cycle = re.compile(basename + r"_lig_(\d+).dms")
     for f in dms_files:
+        c = re.match(to_cycle, f).group(1)
+        cycles.append(int(c))
+        cycles.sort()
+elif tar_type == "rst" :
+    outrst= basename + "_rst.tar"
+    rst_files = glob.glob("%s_*.rst" % basename)
+    print 1,rst_files
+    to_cycle = re.compile(basename + r"_(\d+).rst")
+    for f in rst_files:
         c = re.match(to_cycle, f).group(1)
         cycles.append(int(c))
         cycles.sort()
@@ -55,10 +64,10 @@ cycles.pop()
 cycles.pop()
 
 
-# concatenate mae or tar files
-if imp_version == "academic" :
+# concatenate mae, dms or rst to tar files
+if tar_type == "dms" :
     for c in cycles:
-        #construct mae file name
+        #construct dms file name
         file_lig = "%s_lig_%d.dms" % (basename,c)
         file_rcpt = "%s_rcpt_%d.dms" % (basename,c)
         print "dms structure files %s %s" % (file_lig,file_rcpt)
@@ -71,6 +80,19 @@ if imp_version == "academic" :
             os.remove(file_rcpt)
         except:
             print "Warning: Cannot open dms structure file %s %s" % (file_lig, file_rcpt)
+
+elif tar_type == "rst" :
+    for c in cycles:
+        #construct rst file name
+        file_rst = "%s_%d.rst" % (basename,c)
+        print "rst file %s" % (file_rst)
+        try:
+            tarcom_rst = "tar -r --file=" + outrst + " " + file_rst 
+            os.system(tarcom_rst)
+            os.remove(file_rst)
+        except:
+            print "Warning: Cannot open rst file %s" % (file_rst)
+
 else:
     for c in cycles:
         #construct mae file name
@@ -99,17 +121,41 @@ for r in cycles:
             print "Warning: Cannot open output file %s" % file
 fout.close()
 
-#delete .rst and .inp files
+#delete .rst, .dms, and .inp files
 for r in cycles:
-        #construct file name
-        rstfile = "%s_%d.rst" % (basename,r)
+	if tar_type == "dms" :
+	        #construct file name
+        	rstfile = "%s_%d.rst" % (basename,r)
+		print rstfile
+	        try:
+           	    os.remove(rstfile)
+        	except:
+        	    print "Warning: Cannot open rst file %s" % rstfile
+	elif tar_type == "rst" :
+	        file_lig = "%s_lig_%d.dms" % (basename,r)
+	        file_rcpt = "%s_rcpt_%d.dms" % (basename,r)
+	        inpfile = "%s_%d.inp" % (basename,r)
+		print file_lig
+	        print file_rcpt
+	        try:
+        	    os.remove(file_lig)
+        	except:
+	            print "Warning: Cannot open ligand dms file %s" % file_lig
+       		try:
+            	    os.remove(file_rcpt)
+        	except:
+           	    print "Warning: Cannot open receiptor dms file %s" % file_rcpt
+	else : 
+              #construct file name
+                rstfile = "%s_%d.rst" % (basename,r)
+                print rstfile
+                try:
+                    os.remove(rstfile)
+                except:
+                    print "Warning: Cannot open rst file %s" % rstfile
+
         inpfile = "%s_%d.inp" % (basename,r)
-        print rstfile
         print inpfile
-        try:
-            os.remove(rstfile)
-        except:
-            print "Warning: Cannot open rst file %s" % rstfile
         try:
             os.remove(inpfile)
         except:
