@@ -510,7 +510,9 @@ class async_re(object):
         available_slots = (int(self.keywords.get('TOTAL_CORES')) /
                            int(self.keywords.get('SUBJOB_CORES')))
         max_njobs_submittable = int((1.+subjobs_buffer_size)*available_slots)
-        nlaunch = self.waiting - max(2,self.nreplicas - max_njobs_submittable)
+        # WFF: added so that jobs without exchange can launch all jobs possible
+        # Will make it so without exchange: waiting - max(0, nreplicas - max_jobs)
+        nlaunch = self.waiting - max(2*int(self.exchange), self.nreplicas - max_njobs_submittable)
         nlaunch = max(0,nlaunch)
         if self.verbose:
             self.logger.debug('available_slots: %d', available_slots)
