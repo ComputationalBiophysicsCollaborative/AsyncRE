@@ -144,12 +144,17 @@ out <- uwham(label=state.labels, logQ=neg.pot, fisher=TRUE)
 # state correction
 ze <- matrix(out$ze, nrow=1, ncol=m)
 -ze/bet
+ve <- matrix(out$ve,nrow=1, ncol=m)
+sqrt(ve)/bet
+
 dg <- (-ze[,m]+ze[,1])/bet
+dv <- sqrt(ve[,m]+ve[,1])/bet
+feout <-c(dg,dv)
 
 # print out
 # printf <- function(...)print(sprintf(...))
 #
-write(dg,file="%s", ncolumns = 1, append = FALSE, sep = " ")
+write(feout,file="%s", ncolumns = 2, append = FALSE, sep = " ")
 
 # block bootstrap for free energies, note that proc.type="serial"
 # for simulated tempering data.
