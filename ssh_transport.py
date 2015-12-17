@@ -292,8 +292,17 @@ class ssh_transport(Transport):
                 # disconnects replica from job and node
                 self._clear_resource(replica)
 
-                self.logger.info("%s", job['output_queue'].get())
-                self.logger.info("%s", job['error_queue'].get())
+                # attempt to remove item from queues
+                try:
+                    # wait 30sec, if not raise Queue.Empty exception
+                    # this could also be modified to use .get(block=False)
+                    # which is equivalent to timeout=0
+                    self.logger.info("%s", job['output_queue'].get(timeout=30))
+                    self.logger.info("%s", job['error_queue'].get(timeout=30))
+                # if the queues timeout, raises a Queue.Empty Exception
+                # note this is not a mp.Queue exception; it's from the Queue lib
+                except Queue.Empty:
+                    self.logger.warn("Error removing items from ssh process communication queues for r%s", replica)
 
                 job['output_queue'].close()
                 job['error_queue'].close()
