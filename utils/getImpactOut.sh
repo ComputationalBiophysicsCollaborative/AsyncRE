@@ -9,10 +9,12 @@
 async_scripts=$1     #  path to scripts /home/tuf29141/software/async_scripts
 job_dirs=$2          #  job folders
 outfile=$3           #  .out file from IMPACT
-nskip=$4             #  the first nskip points are neglected
-nfreq=$5             #  the frequency to extract data from .out file
-rbgn=$6              #  strart repplica
-rend=$7              #  end replica
+neq=$4               #  number of points from equilibrium which are removed
+nprod=$5             #  number of points from production
+nskip=$6             #  the first nskip MD cycles are neglected
+nfreq=$7             #  the frequency to extract data from .out file
+rbgn=$8              #  strart repplica
+rend=$9              #  end replica
 
 root_path=`pwd`
 echo "-------------------------------------------------------------------------------"
@@ -26,7 +28,7 @@ for folder in $job_dirs; do
         do
             cd r$ir
             rm -rf lbe.dat
-            python $async_scripts/getImpactOut.py $outfile $nskip $nfreq
+            python $async_scripts/getImpactOut.py $outfile $neq $nprod $nskip $nfreq
             echo "Finished collecting data in r$ir"
             cd ../
         done

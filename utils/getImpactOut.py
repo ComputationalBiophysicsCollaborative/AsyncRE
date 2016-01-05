@@ -47,20 +47,36 @@ def getImpactData(file):
     f.close()
     return data
 
-nskip=int(sys.argv[2])
-nprnt=int(sys.argv[3])
+neq=int(sys.argv[2])
+nprod=int(sys.argv[3])
+nskip=int(sys.argv[4])
+nprnt=int(sys.argv[5])
 datai=getImpactData(outfilename)
 n=len(datai)
 nf=len(datai[0])
+
 print "finishreadingfile"
 file=open('lbe.dat','a')
-
-for i in range(nskip,(n/nprnt)-1):
-    tem=datai[i*nprnt][1]
-    tot=datai[i*nprnt][3]
-    pot=datai[i*nprnt][5]
-    lmb = datai[i*nprnt][nf-2]
-    u = datai[i*nprnt][nf-1]
-    file.write('%s\t%s\t%s\t%s\t%s\n' %(tem,tot,pot,lmb,u))
-
+for i in range(nskip,n/(neq+nprod)):
+   for j in range(0,nprod,nprnt):
+       k=i*(neq+nprod)+ neq + j 
+       tem=datai[k][1]
+       tot=datai[k][3]
+       pot=datai[k][5]
+       lmb = datai[k][nf-2]
+       u = datai[k][nf-1]
+       file.write('%s\t%s\t%s\t%s\t%s\n' %(tem,tot,pot,lmb,u))
 file.close()
+
+
+#print "finishreadingfile"
+#file=open('lbe.dat','a')
+#
+#for i in range(nskip,(n/nprnt)-1):
+#    tem=datai[i*nprnt][1]
+#    tot=datai[i*nprnt][3]
+#    pot=datai[i*nprnt][5]
+#    lmb = datai[i*nprnt][nf-2]
+#    u = datai[i*nprnt][nf-1]
+#    file.write('%s\t%s\t%s\t%s\t%s\n' %(tem,tot,pot,lmb,u))
+#file.close()
