@@ -422,7 +422,7 @@ extract the conformers at certain thermodynamic states.
 	        datafile = "r%d/%s_%d.out" % (ir,self.jobname,r)
                 #print datafil
 	        stateValues=self.getStateValues(datafile)
-                print stateValues
+                # print stateValues
                 if self.ExtTemp == stateValues[0] and self.ExtLambda == stateValues[1] :
                    if self.ConfFormat == 'rst' :
 		      conffile= "r%d/%s_%d.%s" % (ir,self.jobname,r,self.ConfFormat)
