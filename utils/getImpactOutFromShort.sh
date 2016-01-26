@@ -1,14 +1,14 @@
 #!/bin/bash
 
 #####################################################################################################
-# A bash script to extract the binding energies for the output of IMPACT.
+# A bash script to extract the binding energies for the many output files of IMPACT .
 #
-# Junchao Xia  07/28/2014
+# Junchao Xia  01/09/2014
 #####################################################################################################
 
 async_scripts=$1     #  path to scripts /home/tuf29141/software/async_scripts
 job_dirs=$2          #  job folders
-basename=$3          #  .out file from IMPACT
+basename=$3         #   basename to extract .out files from IMPACT
 neq=$4               #  number of points from equilibrium which are removed
 nprod=$5             #  number of points from production
 nskip=$6             #  the first nskip MD cycles are neglected
@@ -28,8 +28,7 @@ for folder in $job_dirs; do
         do
             cd r$ir
             rm -rf lbe.dat
-            cat `/bin/ls -v ${basename}_*.out` > ${basename}_all.dat
-            python $async_scripts/getImpactOut.py ${basename} $neq $nprod $nskip $nfreq
+            python $async_scripts/getImpactOutFromShort.py $basename $neq $nprod $nskip $nfreq
             echo "Finished collecting data in r$ir"
             cd ../
         done

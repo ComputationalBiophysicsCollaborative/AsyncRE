@@ -21,7 +21,7 @@ for folder in $job_dirs; do
     if [ -d $folder ]; then
         # cd $folder
         echo "working in the folder of $folder"
-           ${async_scripts}/getImpactOut.sh ${async_scripts} ${folder} ${folder} $neq $nprod $nskip $nprnt $rbgn $rend
+           ${async_scripts}/getImpactOutFromShort.sh ${async_scripts} ${folder} ${folder} $neq $nprod $nskip $nprnt $rbgn $rend
         cd $root_path
     else
         echo "$folder does not exist."

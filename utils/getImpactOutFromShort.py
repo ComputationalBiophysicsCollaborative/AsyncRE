@@ -1,4 +1,6 @@
 import os,re,math,sys
+import getopt
+import glob
 
 
 def getImpactData(file):
@@ -28,6 +30,7 @@ def getImpactData(file):
             words = line.split()
             step = words[2]
             datablock = [int(step)]
+            # comment out to use the instantaeous temperature 
             if have_trgtemperature == 1:
                 datablock.append(float(temperature))
             #now read up to 3 lines of numbers
@@ -46,38 +49,39 @@ def getImpactData(file):
     f.close()
     return data
 
-outfilename=sys.argv[1]+"_all.dat" # the output file from impact
+basename=sys.argv[1]
 neq=int(sys.argv[2])
 nprod=int(sys.argv[3])
 nskip=int(sys.argv[4])
 nprnt=int(sys.argv[5])
 
-datai=getImpactData(outfilename)
-n=len(datai)
-nf=len(datai[0])
+cycles = []
+out_files = glob.glob("%s_*.out" % basename)
+# print 1,out_files
+to_cycle = re.compile(basename + r"_(\d+).out")
+for f in out_files:
+    c = re.match(to_cycle, f).group(1)
+    cycles.append(int(c))
+    cycles.sort()
 
-#print "finishreadingfile"
-file=open('lbe.dat','a')
-for i in range(nskip,n/(neq+nprod)):
-   for j in range(0,nprod,nprnt):
-       k=i*(neq+nprod)+ neq + j 
-       tem=datai[k][1]
-       tot=datai[k][3]
-       pot=datai[k][5]
-       lmb = datai[k][nf-2]
-       u = datai[k][nf-1]
-       file.write('%s\t%s\t%s\t%s\t%s\n' %(tem,tot,pot,lmb,u))
-file.close()
+lbe_file=open('lbe.dat','a')
+for r in cycles:
+    #construct file name
+    datafile = "%s_%d.out" % (basename,r)
+    try:
+        datai=getImpactData(datafile)	
+        n=len(datai)
+        nf=len(datai[0])
+        for i in range(nskip,n/(neq+nprod)):
+            for j in range(0,nprod,nprnt):
+                k=i*(neq+nprod)+ neq + j
+                tem=datai[k][1]
+                tot=datai[k][3]
+                pot=datai[k][5]
+                lmb = datai[k][nf-2]
+                u = datai[k][nf-1]
+                lbe_file.write('%s\t%s\t%s\t%s\t%s\n' %(tem,tot,pot,lmb,u))
+    except:
+        print "Warning: Cannot open output file %s" % file
 
-
-#print "finishreadingfile"
-#file=open('lbe.dat','a')
-#
-#for i in range(nskip,(n/nprnt)-1):
-#    tem=datai[i*nprnt][1]
-#    tot=datai[i*nprnt][3]
-#    pot=datai[i*nprnt][5]
-#    lmb = datai[i*nprnt][nf-2]
-#    u = datai[i*nprnt][nf-1]
-#    file.write('%s\t%s\t%s\t%s\t%s\n' %(tem,tot,pot,lmb,u))
-#file.close()
+lbe_file.close()
