@@ -17,8 +17,6 @@ npnt=$8              # number points per copy
 ncop=$9              # number of copies
 root_path=`pwd`
 echo "-------------------------------------------------------------------------------"
-echo "|        Perform block analysis for binding energy                            |"
-echo "-------------------------------------------------------------------------------"
 if [ -d $folder ]; then
    echo "$folder exists, remove the old bfe_conv.dat."
    rm -rf $folder/bfe_conv_all.dat 

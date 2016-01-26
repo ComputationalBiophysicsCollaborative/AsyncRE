@@ -8,9 +8,10 @@ Junchao Xia <junchao.xia@temple.edu>
 
 """
 
-import os, sys, time
+import os, re, sys, time
 from configobj import ConfigObj
 import random, math
+import glob
 
 def _exit(message):
     """Print and flush a message to stdout and then exit."""
@@ -95,6 +96,40 @@ class asyncRE_analysis:
  	    self.nreplicas = self._buildBEDAMStates()
 	else :
             self.nreplicas = int(self.keywords.get('NREPLICAS'))
+        # control the replicas included for data analysis
+        if self.keywords.get('REPSTART') is None:
+            self.repstart = 0
+        else :
+            self.repstart = int(self.keywords.get('REPSTART'))
+	if self.keywords.get('REPEND') is None:
+            self.repend = self.repstart + self.nreplicas-1
+        else :
+            self.repend = int(self.keywords.get('REPEND'))
+
+        self.ExtConf=False 
+        if self.keywords.get('EXT_CONF') is None:
+            self.ExtConf=False
+        elif self.keywords.get('EXT_CONF').lower() == 'yes':
+            self.ExtConf=True
+        elif self.keywords.get('EXT_CONF').lower() == 'no':
+            self.ExtConf=False
+        else :
+            self._exit("EXT_CONF option is not set right (yes or no).")
+	if ( self.ExtConf) :
+            if self.keywords.get('CONF_FORMAT').lower() == 'rst':
+	       self.ConfFormat = 'rst'
+            elif self.keywords.get('CONF_FORMAT').lower() == 'dms':
+	       self.ConfFormat = 'dms'
+            else :
+               self._exit("CONF_FORMAT option is not set right (rst or dms).")
+            if self.keywords.get('EXT_TEMP') is None:
+               self.ExtTemp = float(300.0)
+            else :
+               self.ExtTemp = float(self.keywords.get('EXT_TEMP'))
+            if self.keywords.get('EXT_LAMBDA') is None:
+               self.ExtLambda = float(1.0)
+            else :
+               self.ExtLambda = float(self.keywords.get('EXT_LAMBDA'))
 
     def _buildBEDAMStates(self):
         self.stateparams = []
@@ -221,6 +256,30 @@ dg <- (-ze[,mlam]+ze[,1])/bet
 write(dg,file="%s", ncolumns = mtempt, append = FALSE, sep = " ")
 
 """
+    def checkBindEngData(self):
+        """
+check the binding free engies at different thermodynamical states.
+"""
+        os.system("mv lbe_temp.dat lbe_temp_old.dat")
+        datafile = 'lbe_temp_old.dat'
+        outfile = 'lbe_temp.dat'
+        expfile = 'lbe_temp_exp.dat'
+        fin = open(datafile ,"r")
+        fout = open(outfile,"w")
+        fexp = open(expfile,"w")
+        line = fin.readline()
+        while line:
+             words = line.split()
+             if words[3] in self.lambdas :
+                fout.write(line)
+             else :  
+                print("Warning: lambda = %s not in the defined states in the line %s" %(words[3],line)) 
+                fexp.write(line)                
+             line = fin.readline()
+        fin.close()
+        fout.close()
+
+
     def calculateBindFreeEng(self):
         """
 calculate the binding free engies at different time from the time series of binding energies.
@@ -259,16 +318,17 @@ calculate the binding free engies at different time from the time series of bind
                 ndata = i*self.nfreq
                 ntail = i*self.nfreq
 
-            for ir in range(0,self.nreplicas):
+            for ir in range(self.repstart,self.repend+1):
                 inpf = "r%d/lbe.dat" %ir
                 outf = "r%d/lbe_temp.dat" %ir
                 lbe_cmd = 'head -n ' + str(nhead) + ' ' + inpf + '| tail -n ' + str(ntail) + ' > ' + outf
                 os.system(lbe_cmd)
-                if (ir == 0 ):
-                    tmp_cmd = 'cat ' + outf + '> lbe_temp.dat';
+                if (ir == self.repstart ):
+                    tmp_cmd = 'cat ' + outf + '> lbe_temp.dat'
                 else:
-                    tmp_cmd = 'cat ' + outf + '>> lbe_temp.dat';
+                    tmp_cmd = 'cat ' + outf + '>> lbe_temp.dat'
                 os.system(tmp_cmd)
+            self.checkBindEngData()
             uwham_cmd = 'R CMD BATCH ' + R_inpfile + '>& uwham_async.Rout'
             os.system(uwham_cmd)
             f = open(deltGfile ,"r")
@@ -283,7 +343,99 @@ calculate the binding free engies at different time from the time series of bind
             bfe_outf.write(line)
         bfe_outf.close()
 
+    def getStateValues(self,file):
+    	if not os.path.exists(file):
+           msg = 'File does not exist: %s' % file
+           sys.exit(msg)
+	step_line = re.compile("^ Step number:")
+   	number_line = re.compile("(\s+-*\d\.\d+E[\+-]\d+\s*)+")
+    	temperature_line = re.compile("^\s*input target temperature\s+(\d*\.*\d*)")
+    	have_trgtemperature = 0
+        have_trglambda=0
+	data = []
+	f = open(file ,"r")
 
+   	line = f.readline()
+   	while line:
+            # fast forward until we get to the line: 
+            # "Step number: ... ", grab target temperature along the way
+            # if it's in the input file
+      	    while line and not re.match(step_line, line):
+                if re.match(temperature_line, line):
+        	     words = line.split()
+                     temperature = words[3]
+                     have_trgtemperature = 1
+            	line = f.readline()
+      	    # read the step number
+      	    if re.match(step_line, line):
+           	words = line.split()
+            	step = words[2]
+            	datablock = [int(step)]
+            	# comment out to use the instantaeous temperature 
+           	if have_trgtemperature == 1:
+               	   datablock.append(float(temperature))
+           	 #now read up to 3 lines of numbers
+            	ln = 0
+           	while ln < 3:
+                     line = f.readline()
+                     if not line:
+                        msg = "Unexpected end of file"
+                        self.exit(msg)
+                     if re.match(number_line, line):
+                        for word in line.split():
+                            datablock.append(float(word))
+                        ln += 1
+                     data.append(datablock)
+                     have_trglambda=1
+	    line = f.readline()
+            if have_trglambda ==1 :
+	       break 
+
+    	f.close()
+        stateValues=[]
+        stateValues.append(data[0][1])
+        nf=len(data[0])
+        stateValues.append(data[0][nf-2])
+	return stateValues
+
+
+    def extConformers(self):
+        """
+extract the conformers at certain thermodynamic states.
+"""
+        foldername=self.ConfFormat + '_T' + str(self.ExtTemp) + '_lambda' + str(self.ExtLambda)
+        os.system('rm -rf ' + foldername)
+        makefolder_cmd = 'mkdir ' + foldername  
+        os.system(makefolder_cmd)
+        for ir in range(self.repstart,self.repend+1):
+            cycles = []
+	    out_files = glob.glob("r%d/%s_*.out" % (ir,self.jobname))
+	    # print out_files
+	    to_cycle = re.compile("r"+ str(ir) + "/" + self.jobname + r"_(\d+).out")
+	    for f in out_files:
+   		c = re.match(to_cycle, f).group(1)
+     		# print c
+                cycles.append(int(c))
+            cycles.sort()
+	    for r in cycles:
+   	        #construct file name
+	        datafile = "r%d/%s_%d.out" % (ir,self.jobname,r)
+                #print datafil
+	        stateValues=self.getStateValues(datafile)
+                print stateValues
+                if self.ExtTemp == stateValues[0] and self.ExtLambda == stateValues[1] :
+                   if self.ConfFormat == 'rst' :
+		      conffile= "r%d/%s_%d.%s" % (ir,self.jobname,r,self.ConfFormat)
+                      outfile = "%s_r%d_%d.%s" % (self.jobname,ir,r,self.ConfFormat) 
+                      cp_cmd= 'cp ' + conffile + ' ' + foldername + '/' + outfile
+                   elif self.ConfFormat == 'dms' :
+                       infile_lig= "r%d/%s_lig_%d.%s" % (ir,self.jobname,r,self.ConfFormat)
+                       outfile_lig = "%s_lig_r%d_%d.%s" % (self.jobname,ir,r,self.ConfFormat)
+		       infile_rcpt= "r%d/%s_rcpt_%d.%s" % (ir,self.jobname,r,self.ConfFormat) 
+                       outfile_rcpt = "%s_rcpt_r%d_%d.%s" % (self.jobname,ir,r,self.ConfFormat)
+	               cp_cmd= 'cp ' + infile_lig + ' ' + foldername + '/' + outfile_lig + '; cp ' + infile_rcpt + ' ' + foldername + '/' + outfile_rcpt
+	 	   os.system(cp_cmd)
+		 
 
 if __name__ == '__main__':
 
@@ -310,3 +462,5 @@ if __name__ == '__main__':
 
     if (async_analy.BindFreeEng) :
         async_analy.calculateBindFreeEng()
+    if (async_analy.ExtConf) : 
+	async_analy.extConformers() 
