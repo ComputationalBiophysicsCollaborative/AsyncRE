@@ -10,7 +10,7 @@ Junchao Xia <junchao.xia@temple.edu>
 
 import os, re, sys, time
 from configobj import ConfigObj
-import random, math
+import random, math, numpy
 import glob
 
 def _exit(message):
@@ -47,6 +47,16 @@ class asyncRE_analysis:
     def _checkInput(self):
 
         #Option for calculating binding free energy
+        self.CalcBindEng=True
+        if self.keywords.get('CALC_BIND_ENG') is None:
+            self.CalcBindEng=False
+        elif self.keywords.get('CALC_BIND_ENG').lower() == 'yes':
+            self.CalcBindEng=True
+        elif self.keywords.get('CALC_BIND_ENG').lower() == 'no':
+            self.CalcBindEng=False
+        else :
+            self._exit("CALC_BIND_ENG option is not set right (yes or no).")
+
         self.BindFreeEng=True
         if self.keywords.get('BIND_FREE_ENG') is None:
             self.BindFreeEng=False
@@ -56,7 +66,7 @@ class asyncRE_analysis:
             self.BindFreeEng=False
         else :
             self._exit("BIND_FREE_ENG option is not set right (yes or no).")
-        if ( self.BindFreeEng) :
+        if ( self.BindFreeEng or self.CalcBindEng) :
             if self.keywords.get('NBEGIN') is None:
                 self._exit("The starting point (NBEGIN) for data needs to be specified")
             self.nbgn = int(self.keywords.get('NBEGIN'))
@@ -258,7 +268,7 @@ write(dg,file="%s", ncolumns = mtempt, append = FALSE, sep = " ")
 """
     def checkBindEngData(self):
         """
-check the binding free engies at different thermodynamical states.
+check the binding free energies at different thermodynamical states.
 """
         os.system("mv lbe_temp.dat lbe_temp_old.dat")
         datafile = 'lbe_temp_old.dat'
@@ -272,17 +282,67 @@ check the binding free engies at different thermodynamical states.
              words = line.split()
              if words[3] in self.lambdas :
                 fout.write(line)
-             else :  
-                print("Warning: lambda = %s not in the defined states in the line %s" %(words[3],line)) 
-                fexp.write(line)                
+             else :
+                print("Warning: lambda = %s not in the defined states in the line %s" %(words[3],line))
+                fexp.write(line)
              line = fin.readline()
         fin.close()
         fout.close()
 
+    def reorgBindEngData(self):
+        """
+reorgnize the binding energies according to different thermodynamical states.
+"""
+        datafile = 'lbe_temp.dat'
+        for it in range(0,self.ntemp):
+          temp_str = self.temperatures[it]
+          for il in range(0,self.nlam):
+            lambda_str =  self.lambdas[il]
+            fin = open(datafile ,"r")
+            outfile = 'metadata/lbe_temp_T'+ temp_str + '_L' + lambda_str + '.dat'
+	    fout = open(outfile ,"w")
+	    line = fin.readline()	
+	    while line:
+              words = line.split()
+              if words[0] == temp_str and words[3] == lambda_str:
+                 fout.write(line)
+              line = fin.readline()
+            fin.close()
+            fout.close()
+
+    def calcBindEngData(self):
+        """
+calculate the averages of binding energies for different thermodynamical states.
+"""
+        for it in range(0,self.ntemp):
+          temp_str = self.temperatures[it]
+          for il in range(0,self.nlam):
+            lambda_str =  self.lambdas[il]
+            datafile = 'metadata/lbe_temp_T'+ temp_str + '_L' + lambda_str + '.dat'
+            fin = open(datafile ,"r")
+            avgfile = 'metadata/lbe_avrg_T'+ temp_str + '_L' + lambda_str + '.dat'
+            fout = open(avgfile ,"a")
+            data =[]
+            line = fin.readline()
+            while line:
+              words = line.split()
+              datablock=[]
+              if words[0] == temp_str and words[3] == lambda_str:
+                 datablock=[float(words[0])]
+                 for iw in range(1,len(words)) :
+                   datablock.append(float(words[iw]))
+                 data.append(datablock)
+              line = fin.readline()
+            meanvalue=numpy.mean(data, axis=0)
+            for im in range(0,len(meanvalue)) :
+	      fout.write("%s\t" %meanvalue[im])
+	    fout.write("\n")
+            fin.close()
+            fout.close()
 
     def calculateBindFreeEng(self):
         """
-calculate the binding free engies at different time from the time series of binding energies.
+calculate the binding free energies at different time from the time series of binding energies.
 """
         datafile = 'lbe_temp.dat'
         deltGfile = 'DeltG.dat'
@@ -304,10 +364,14 @@ calculate the binding free engies at different time from the time series of bind
         f.write(uwham_input)
         f.close()
 
-        if (not self.cumulated):
-            bfe_outf = open('bfe_conv_noc.dat', 'w')
-        else:
-            bfe_outf = open('bfe_conv.dat', 'w')
+        if self.BindFreeEng : 
+           if (not self.cumulated):
+              bfe_outf = open('bfe_conv_noc.dat', 'w')
+           else:
+              bfe_outf = open('bfe_conv.dat', 'w')
+	if self.CalcBindEng :
+	   os.system("mkdir metadata")
+	   os.system("rm -f metadata/lbe_avrg_*.dat")
 
         for i in range(self.nbgn,self.nend+1):
             nhead = i*self.nfreq
@@ -329,19 +393,24 @@ calculate the binding free engies at different time from the time series of bind
                     tmp_cmd = 'cat ' + outf + '>> lbe_temp.dat'
                 os.system(tmp_cmd)
             self.checkBindEngData()
-            uwham_cmd = 'R CMD BATCH ' + R_inpfile + '>& uwham_async.Rout'
-            os.system(uwham_cmd)
-            f = open(deltGfile ,"r")
-            line = f.readline()
-            f.close()
-            #bfedata=line.split()
-            #bfe_outf.write("%d" % int(ndata))
-            #for j in range(0, len(bfedata)) :
-            #    bfe_outf.write("%f" % float(bfedata[j]))
-            #bfe_outf.write("\n")
-            line = str(nhead) + '   ' + line
-            bfe_outf.write(line)
-        bfe_outf.close()
+            if self.CalcBindEng :
+	       self.reorgBindEngData()
+	       self.calcBindEngData() 
+            if self.BindFreeEng :
+               uwham_cmd = 'R CMD BATCH ' + R_inpfile + '>& uwham_async.Rout'
+               os.system(uwham_cmd)
+               f = open(deltGfile ,"r")
+               line = f.readline()
+               f.close()
+               #bfedata=line.split()
+               #bfe_outf.write("%d" % int(ndata))
+               #for j in range(0, len(bfedata)) :
+               #    bfe_outf.write("%f" % float(bfedata[j]))
+               #bfe_outf.write("\n")
+               line = str(nhead) + '   ' + line
+               bfe_outf.write(line)
+	if self.BindFreeEng :
+           bfe_outf.close()
 
     def getStateValues(self,file):
     	if not os.path.exists(file):
@@ -403,7 +472,7 @@ calculate the binding free engies at different time from the time series of bind
         """
 extract the conformers at certain thermodynamic states.
 """
-        foldername=self.ConfFormat + '_T' + str(self.ExtTemp) + '_lambda' + str(self.ExtLambda)
+        foldername=self.ConfFormat + '_T' + str(self.ExtTemp) + '_L' + str(self.ExtLambda)
         os.system('rm -rf ' + foldername)
         makefolder_cmd = 'mkdir ' + foldername  
         os.system(makefolder_cmd)
@@ -459,8 +528,8 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
     async_analy = asyncRE_analysis(commandFile, options=None)
+    if ( async_analy.CalcBindEng or async_analy.BindFreeEng) : 
+	async_analy.calculateBindFreeEng()
 
-    if (async_analy.BindFreeEng) :
-        async_analy.calculateBindFreeEng()
     if (async_analy.ExtConf) : 
 	async_analy.extConformers() 
