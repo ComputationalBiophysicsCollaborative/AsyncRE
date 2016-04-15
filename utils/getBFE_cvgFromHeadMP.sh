@@ -28,11 +28,11 @@ else
    done
 fi
 
-for (( ip=$nbgn; ip<=$nend; ip++ ))
+for (( ip=1; ip<=$npnt; ip++ ))
 do
    nfrq=$(( $ip*$npnt ))
-   $async_scripts/mergeLBEdataLS.sh $folder "$oldfolders" $rbgn $rend $nfrq $nfrq $ncop 
-   ntot=$(( $nfrq*$ncop ))
+   $async_scripts/mergeLBEdataFromHeadLS.sh $folder "$oldfolders" $rbgn $rend $nbgn $nend $npnt $ip $ncop 
+   ntot=$(( (nend-nbgn+1)*ip*ncop ))
    cat input/asyncRE_analysis.cntl_temp | sed "s/NSTART/1/" | sed "s/NLAST/1/" | sed "s/NINTV/$ntot/" > $folder/asyncRE_analysis.cntl 
    cd $folder
    rm -rf .RData 

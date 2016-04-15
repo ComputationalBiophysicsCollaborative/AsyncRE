@@ -10,9 +10,11 @@ oldfolders=$2
 job_dirs=`ls -d $oldfolders`
 rbgn=$3
 rend=$4
-nhead=$5
-ntail=$6
-ncopy=$7
+nbgn=$5
+nend=$6
+npnts=$7
+nincl=$8
+ncopy=$9
 root_path=`pwd`
 
 if [ ! -d "$newfolder" ]; then
@@ -28,10 +30,16 @@ do
    fi
 done
 
-#echo "merge files from folders as $job_dirs"
-icopy=0
-for folder in $job_dirs; do
-    if [ -d $folder ]; then
+for (( nstart=$nbgn; nstart<=$nend; nstart++ ))
+do
+
+  ((nhead = nstart*npnts + nincl))
+  ((ntail = nincl))
+
+   #echo "merge files from folders as $job_dirs"
+   icopy=0
+   for folder in $job_dirs; do
+      if [ -d $folder ]; then
         ((icopy=icopy+1))
 	if ((icopy > ncopy)); then
            exit  
@@ -41,9 +49,11 @@ for folder in $job_dirs; do
         do
            head -n $nhead $folder/r$ir/lbe.dat | tail -n $ntail >> $newfolder/r$ir/lbe.dat 
         done
-    else
+      else
         echo "$folder does not exist."
         exit
-    fi
+      fi
+   done
+
 done
 
