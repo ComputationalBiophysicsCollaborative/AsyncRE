@@ -155,18 +155,20 @@ class WCGManager(object):
             os.mkdir(struct_dir)
             self.struct_dirs.append(struct_dir)
 
-            # symlink structure-dependent files
+            # copy structure-dependent files
             for f in files:
                 dst = os.path.join(struct_dir, f)
-                os.symlink(f, dst)
+                shutil.copy2(f, dst)
 
             # symlink structure-independent files
             for pf in self.param_files:
                 # TODO: fix this hack
                 if pf != 'runimpact':
-                    pf = pf.replace(self.basename, struct_dir)
-                pf_dst = os.path.join(struct_dir, pf)
-                os.symlink(pf, pf_dst)
+                    pf_dst = pf.replace(self.basename, struct_dir)
+                else:
+                    pf_dst = pf
+                pf_dst = os.path.join(struct_dir, pf_dst)
+                os.symlink(os.path.relpath(pf, struct_dir), pf_dst)
 
             # format and copy cntl files
             subname = "{self.basename}_{struct:06}".format(struct=k, self=self)
