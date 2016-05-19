@@ -1,0 +1,66 @@
+
+write file -
+"md.out" append -
+      title -
+"md" *
+
+! @jobname@_r@replica@_c@cycle@
+
+CREATE
+  build primary name species1 type auto read sqldb file -
+"md-in1.dms"
+  build primary name species2 type auto read sqldb file -
+"md-in2.dms"
+QUIT
+
+SETMODEL
+  setpotential
+    mmechanics nb12softcore umax 1000.0  consolv agbnp2
+    weight constraints buffer 0.6
+    weight bind rxid 0 nrep 1 -
+      lambda @lambda@
+!
+  quit
+  read parm file -
+"paramstd.dat" -
+  noprint
+  energy rest domain cmdist kdist 3.0 dist0 0.0 toldist 6.0 -
+      read file "restdist.dat"
+!  energy rest angle read file "restangl.dat"
+  energy parm dielectric 1 nodist -
+   listupdate 10 -
+    cutoff 12 hmass 5
+  energy rescutoff byatom all
+  zonecons auto
+  energy constraints bonds hydrogens
+QUIT
+
+if @n@ eq 1
+DYNAMICS
+  read restart coordinates formatted file "md-in.rst"
+  input target temperature @temperature@
+  input cntl initialize temperature at @temperature@
+QUIT
+endif
+
+if @n@ gt 1
+DYNAMICS
+  read restart coordinates and velocities external file "md-in.rst"
+QUIT
+endif
+
+DYNAMICS
+  input cntl nstep 10000 delt 0.002
+  input cntl constant temperature langevin relax 1.0
+  input target temperature @temperature@
+!  input cntl initialize temperature at @temperature@
+  input cntl nprnt 500
+  input cntl tol 1.00000e-07
+  input cntl statistics off
+  run rrespa fast 4
+  write restart coordinates and velocities external file "md-out.rst"
+  write sql name species1 file "md-out1.dms"
+  write sql name species2 file "md-out2.dms"
+QUIT
+
+END

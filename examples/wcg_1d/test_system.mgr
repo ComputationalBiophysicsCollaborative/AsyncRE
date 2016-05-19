@@ -1,0 +1,8 @@
+MINSTRUCT=1
+MAXSTRUCT=2
+CNTL_TEMPLATE="test_system.cntl"
+STRUCT_EXT="DMS"
+PARAM_FILES="test_system_agbnp2.param,test_system_paramstd.dat,test_system_restdist.dat,test_system_restangl.dat"
+EXCHANGE_INTERVAL=60
+UPDATE_INTERVAL=600
+END_STEPS=50000

@@ -1,0 +1,35 @@
+#!/bin/bash
+app="impact"
+wdir=$1
+job=$2
+repl=$3
+cycle=$4
+cyclem1=`expr ${cycle} - 1`
+
+id=`cat /proc/sys/kernel/random/uuid`
+
+#main dms file, assume it has been staged in at setup time
+maindms1=${job}_rcp.dms
+maindms2=${job}_lig.dms
+
+rest1=${job}_restdist.dat
+rest2=${job}_restangl.dat
+
+inpfilesrc=${wdir}/${job}_${cycle}.inp
+inpfiledest=${job}_r${repl}_c${cycle}_${id}.inp
+
+rstfilesrc=${wdir}/${job}_${cyclem1}.rst
+rstfiledest=${job}_r${repl}_c${cyclem1}_${id}.rst
+
+agbnp=${job}_agbnp2.param
+param=${job}_paramstd.dat
+
+echo "bin/stage_file_v2 $inpfilesrc $inpfiledest" >&2
+bin/stage_file_v2 $inpfilesrc $inpfiledest
+echo "bin/stage_file_v2  $rstfilesrc $rstfiledest" >&2
+bin/stage_file_v2 $rstfilesrc $rstfiledest
+
+wuname="${job}_r${repl}_c${cycle}_${id}"
+
+echo "bin/create_work_v2 --appname impact --wu_name "$wuname"--wu_template templates/impact_in --result_template templates/impact_out  $inpfiledest $param $agbnp $maindms1 $main1dms2 $rstfiledest $rest1 $rest2" >&2
+bin/create_work_v2 --appname impact --wu_name "$wuname" --wu_template templates/impact_in --result_template templates/impact_out --rsc_fpops_est 36000e9  $inpfiledest $param $agbnp $maindms1 $maindms2 $rstfiledest $rest1 $rest2

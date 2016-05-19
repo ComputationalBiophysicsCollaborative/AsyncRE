@@ -1,4 +1,4 @@
-import sys
+import os, sys
 import time
 import math
 import random
@@ -6,11 +6,12 @@ import logging
 from async_re import async_re
 from bedam_async_re import bedam_async_re_job
 
-class bedamtempt_async_re_job(bedam_async_re_job):
+class wcg_async_re_job(bedam_async_re_job):
     def _setLogger(self):
-        self.logger = logging.getLogger("async_re.bedamtempt_async_re")
+        self.logger = logging.getLogger("async_re.wcg_async_re")
 
     def _checkInput(self):
+        print os.getcwd()
         async_re._checkInput(self)
         #make sure BEDAM + TEMPERATURE is wanted
         if self.keywords.get('RE_TYPE') != 'BEDAMTEMPT':
@@ -47,7 +48,6 @@ class bedamtempt_async_re_job(bedam_async_re_job):
                 st['temperature'] = tempt
                 self.stateparams.append(st)
         return len(self.stateparams)
-
 
     def _buildInpFile(self, replica):
         """
@@ -142,13 +142,6 @@ class bedamtempt_async_re_job(bedam_async_re_job):
             if self.keywords.get('VERBOSE') == "yes":
                 self.logger.info("Rejected %f %f", math.exp(-delta), csi)
 
-    def _extractLastStep(self, repl, cycle):
-        output_file = "r%s/%s_%d.out" % (repl,self.basename,cycle)
-        datai = self._getImpactData(output_file)
-        nr = len(datai)
-        return datai[nr-1][0]
-
-
     def _extractLast_lambda_BindingEnergy_TotalEnergy(self,repl,cycle):
         """
         Extracts binding energy from Impact output
@@ -164,6 +157,13 @@ class bedamtempt_async_re_job(bedam_async_re_job):
         #
         # (lambda, binding energy, total energy)
         return (datai[nr-1][nf-2],datai[nr-1][nf-1],datai[nr-1][2])
+
+    def update_steps(self):
+        steps = []
+        for k in range(self.replicas):
+            curr_cycle = self.status[k]['cycle_current']
+            steps.append(self._getLastStep(k, curr_cycle))
+        return min(steps)
 
     def print_status(self):
         """
@@ -211,30 +211,3 @@ class bedamtempt_async_re_job(bedam_async_re_job):
         e0 = pot[0]
         u = pot[1]
         return beta*(e0 + lmb*u)
-
-if __name__ == '__main__':
-
-    # Parse arguments:
-    usage = "%prog <ConfigFile>"
-
-    if len(sys.argv) != 2:
-        print "Please specify ONE input file"
-        sys.exit(1)
-
-    commandFile = sys.argv[1]
-
-    print ""
-    print "===================================="
-    print "BEDAM Asynchronous Replica Exchange "
-    print "===================================="
-    print ""
-    print "Started at: " + str(time.asctime())
-    print "Input file:", commandFile
-    print ""
-    sys.stdout.flush()
-
-    rx = bedamtempt_async_re_job(commandFile, options=None)
-
-    rx.setupJob()
-
-    rx.scheduleJobs()
