@@ -162,7 +162,9 @@ class WCGManager(object):
 
             # symlink structure-independent files
             for pf in self.param_files:
-                pf = pf.replace(self.basename, struct_dir)
+                # TODO: fix this hack
+                if pf != 'runimpact':
+                    pf = pf.replace(self.basename, struct_dir)
                 pf_dst = os.path.join(struct_dir, pf)
                 os.symlink(pf, pf_dst)
 
@@ -179,7 +181,6 @@ class WCGManager(object):
         for struct_dir in self.struct_dirs:
             os.chdir(struct_dir)
             cntl_file = struct_dir + '.cntl'
-            print os.path.exists(cntl_file), os.path.abspath(cntl_file)
             rx = wcg_async_re_job(cntl_file, options=None)
             rx.setupJob()
             self.managers.append({'rx': rx, 'last_step': 0})
@@ -280,4 +281,4 @@ if __name__ == "__main__":
 
     wm = WCGManager(args.mgrfile)
     wm.setupJobs()
-    wm.scheduleJobs()
+    #wm.scheduleJobs()

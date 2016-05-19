@@ -86,12 +86,21 @@ class boinc_transport(Transport):
             None
 
     def _stage_file(self, file_src, file_dest):
-        command = "cd %s ; bin/stage_file_v2 %s %s" % (self.project_dir, file_src, file_dest)
-        self.logger.info(command)
-        res = os.system("cd %s ; bin/stage_file_v2 %s %s" % (self.project_dir, file_src, file_dest))
-        if not res == 0:
-            self.logger.error("_stage_file(): Error in staging file %s into %s",
-                              file_src, file_dest)
+        cmd1 = "cd %s; bin/dir_hier_path %s"%(self.project_dir, file_dest)
+        self.logger.info(cmd1)
+        final_dest = subprocess.check_output(cmd1)
+
+        # use cp -L so that symlink sources are copied as regular files
+        cmd2 = "cp -L %s %s"%(file_src, final_dest)
+        self.logger.info(cmd2)
+        res = subprocess.check_output(cmd2)
+
+        #command = "cd %s ; bin/stage_file_v2 %s %s" % (self.project_dir, file_src, file_dest)
+        #self.logger.info(command)
+        #res = os.system("cd %s ; bin/stage_file_v2 %s %s" % (self.project_dir, file_src, file_dest))
+        #if not res == 0:
+        #    self.logger.error("_stage_file(): Error in staging file %s into %s",
+        #                      file_src, file_dest)
 
 
     def launchJob(self, replica, job_info):
