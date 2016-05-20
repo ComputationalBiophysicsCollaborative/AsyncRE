@@ -118,6 +118,7 @@ Enqueues a job based on provided job info.
         executable = job_info["executable"]
         cycle = job_info["cycle"]
         working_directory = job_info["working_directory"]
+        print working_directory
         command = "cd %s ; %s %s %s %s %s" % (self.project_dir, executable, working_directory, self.jobname, replica, cycle)
 
         self.logger.info(command)

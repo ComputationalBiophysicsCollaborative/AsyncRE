@@ -142,6 +142,22 @@ class wcg_async_re_job(bedam_async_re_job):
             if self.keywords.get('VERBOSE') == "yes":
                 self.logger.info("Rejected %f %f", math.exp(-delta), csi)
 
+    def _extractLastStep(self, repl, cycle):
+        # check if any output files exist
+        outfiles = ["r%s/%s_%d.out" % (repl, self.basename, k) for k in range(cycle+1)]
+        outs_exist = map(os.path.exists, outfiles)
+        if not any(outs_exist):
+            return 0
+
+        # if at least one exists, grab the last one that does
+        _, ind = sorted(zip(outs_exist, range(cycle+1)))[0]
+        output_file = outfiles[ind]
+
+        datai = self._getImpactData(output_file)
+        nr = len(datai)
+
+        return datai[nr-1][0]
+
     def _extractLast_lambda_BindingEnergy_TotalEnergy(self,repl,cycle):
         """
         Extracts binding energy from Impact output
@@ -160,9 +176,9 @@ class wcg_async_re_job(bedam_async_re_job):
 
     def update_steps(self):
         steps = []
-        for k in range(self.replicas):
+        for k in range(self.nreplicas):
             curr_cycle = self.status[k]['cycle_current']
-            steps.append(self._getLastStep(k, curr_cycle))
+            steps.append(self._extractLastStep(k, curr_cycle))
         return min(steps)
 
     def print_status(self):

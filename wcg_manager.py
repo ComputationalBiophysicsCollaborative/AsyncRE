@@ -185,13 +185,13 @@ class WCGManager(object):
             cntl_file = struct_dir + '.cntl'
             rx = wcg_async_re_job(cntl_file, options=None)
             rx.setupJob()
-            self.managers.append({'rx': rx, 'last_step': 0})
+            self.managers.append({'rx': rx, 'last_step': 0, 'workdir': struct_dir})
             os.chdir(curr_dir)
 
 
     def _jobLoop(self, rx):
         rx.updateStatus()
-        rx.prnt_status()
+        rx.print_status()
         rx.launchJobs()
         rx.updateStatus()
         rx.print_status()
@@ -224,16 +224,19 @@ class WCGManager(object):
         There is also asynchronous updating/exchanging, so that we can update
         less frequently than we exchange.
         """
+        rootdir = os.getcwd()
         while len(self.managers):
             start_time = time.time()
 
             to_pop = []
             for k, manager in enumerate(self.managers):
+                os.chdir(manager['workdir'])
                 step_count = self._jobLoop(manager['rx'])
                 manager['last_step'] = step_count
 
                 if step_count > self.end_steps:
                     to_pop.append(k)
+                os.chdir(rootdir)
 
             for k in to_pop:
                 self.managers.pop(k)
@@ -256,14 +259,19 @@ class WCGManager(object):
                 for i in range(nexchanges):
                     exchange_start = time.time()
                     for k, manager in enumerate(self.managers):
+                        os.chdir(manager['workdir'])
                         manager['rx'].doExchanges()
+                        os.chdir(rootdir)
 
                     exchange_time = time.time() - exchange_start
                     if exchange_time < self.exchange_interval:
                         time.sleep(self.exchange_interval - exchange_time)
 
-        for rx in self.managers:
-            self._jobCleanUp(rx)
+        for manager in self.managers:
+            os.chdir(manager['workdir'])
+            self._jobCleanUp(manager['rx'])
+            os.chdir(rootdir)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
@@ -283,4 +291,4 @@ if __name__ == "__main__":
 
     wm = WCGManager(args.mgrfile)
     wm.setupJobs()
-    #wm.scheduleJobs()
+    wm.scheduleJobs()
