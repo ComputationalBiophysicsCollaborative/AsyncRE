@@ -1,21 +1,13 @@
-# File Based Replica Exchange class
+#!/usr/bin/env python
 """
-The core module of ASyncRE: a framework to prepare and run file-based
-asynchronous replica exchange calculations.
+A wrapper around the core module of ASyncRE designed to manage multiple
+instances of the ASyncRE framework.
 
 Contributors:
+Bill Flynn <wflynny@gmail.com>
 Emilio Gallicchio <emilio.gallicchio@gmail.com>
 Junchao Xia <junchaoxia@hotmail.com>
 Baofeng Zhang <baofzhang@gmail.com>
-Bill Flynn <wflynny@gmail.com>
-
-This code is adapted from:
-https://github.com/saga-project/asyncre-bigjob
-authored by:
-Emilio Gallicchio
-Brian Radak
-Melissa Romanus
-
 """
 import os
 import sys
@@ -27,55 +19,85 @@ import argparse
 import logging, logging.config
 
 from configobj import ConfigObj
-from async_re import async_re
 from wcg_async_re import wcg_async_re_job
+from async_re import async_re, _exit, _open
 
 from gibbs_sampling import *
 
 __version__ = '0.3.2-alpha2'
 
-def _exit(message):
-    """Print and flush a message to stdout and then exit."""
-    print message
-    sys.stdout.flush()
-    print 'exiting...'
-    sys.exit(1)
-
-def _open(name, mode, max_attempts = 100, wait_time = 1):
-    """
-    Convenience function for opening files on an unstable filesystem.
-
-    max_attempts : int
-        maximum number of attempts to make at opening a file
-    wait_time : int
-        time (in seconds) to wait between attempts
-    """
-    attempts = 0
-    f = None
-    while f is None and attempts <= max_attempts:
-        try:
-            f = open(name,mode)
-        except IOError:
-            print ('Warning: unable to access file %s, re-trying in %d '
-                   'second(s)...'%(name,wait_time))
-            f = None
-            attempts += 1
-            time.sleep(wait_time)
-    if attempts > max_attempts:
-        _exit('Too many failures accessing file %s'%name)
-    return f
-
 class WCGManager(object):
     """
-    Class that holds several async_re objects corresponding to a single WCG
-    batch.  The idea is that we will have a single WCGManager which controls an
-    async_re object for each structure.
+    Class responsible for maintaining several (tens-hundreds) of `async_re`
+    objects in a single process.  This class is designed to be operated on a
+    BOINC grid with the intention of being run on IBM's WCG.  Therefore it
+    eschews some of the broader functionality inherent to async_re at the
+    moment.  It has not been tested using SSH-based exchanges.
 
-    There will be a mgr control file which will contain a control fil
-    We will add additional control lines to the control file which are ignored
-    by the async_re parser and anything additional that we need to set in the
-    async_re objects we can pass as "options" to async_re which is currently
-    unused.
+    The basic idea is that each `async_re` object corresponds to a different
+    "structure" of the same system.  The WCGManager expects 3 types of input
+    files:
+
+      - .mgr file     - contains all the necessary keyword arguments that
+                        control how the manager operates in the exact same way
+                        .cntl files control `async_re` processes.
+      - structure     - for each "complex" there is a set of files which do not
+        -independent    depend on the exact conformations of the "structures".
+        files           These files include `agbnp2.param`, `paramstd.dat`, and
+                        restraint files.   In the event that we want to
+                        generalize this manager to control simulations of
+                        different "systems" at once, `setupJobs` needs to be
+                        modified slightly but should be doable.
+      - structure     - these are all the files that vary with among
+        -dependent      "structures".  Currently this list includes the `*.inp`,
+        files           `*_0.rst`, `*_lig.dms`, `*_rcp.dms` files.  This list
+                        can be expanded as needed but a certain format of
+                        `{basename}_XXXXXX*` is expected.  For N "structures",
+                        the manager expects to find 4*N "structure"-dependent
+                        files in increasing numeric order from MINSTRUCT -
+                        MAXSTRUCT specified in the .mgr file.
+
+    There are three main changes that differentiate the way this runs from
+    normal Async_RE.
+
+      1 To reduce filesystem overhead, I brought back symlinking in place of
+        file copying everywhere.  If this is to be run on IBM's grid, copying
+        more files than is absolutely necessary could lead to significant
+        overheads that we wouldn't notice on our smaller grids.  One of the
+        major consequences to this was `stage_file` not working with symlinks,
+        so `boinc_transport` was slightly modified in how it stages files.
+
+      2 The main loop of each `async_re` object are not used and a new main loop
+        functionality was implemented in the WCGManager class.  The `async_re`
+        main loops are blocking and would not allow more than one to run at once
+        unless we subprocessed them.  Instead, we loop over each `async_re`
+        object and invoke a series of `updateStatus`, `print_status`, and
+        `launchJobs` commands for each object.  This is what I called the
+        "update step" and its frequency is controlled by `UPDATE_INTERVAL` in
+        the `.mgr` file.  After the update step, each `async_re` object
+        undergoes (multiple) exchange steps.  The `EXCHANGE_INTERVAL` specified
+        in the `.mgr` file controls how often to exchange, and if signficantly
+        smaller than the `UPDATE_INTERVAL`, all `async_re` objects can exchange
+        many times per update step.  Everything sleeps in the time between when
+        the update step finishes and the first exchange attempts are made, and
+        between exchange attempts (assuming there are few enough `async_re`
+        objects given the specified update/exchange intervals that there is time
+        left over).
+
+      3 The main loop terminates in a significantly different way as well.
+        Instead of breaking once a specified walltime limit is reached, the main
+        loop exits once every replica of every `async_re` object has surpassed a
+        certain number of steps (specified with `END_STEPS` in the `.mgr` file).
+        The works by having each `async_re` object check its replicas' steps (by
+        parsing their latest output files), take the minimum, and comparing that
+        to `END_STEPS`.  `async_re` objects which have surpassed the step count
+        are removed from the set of objects managed by the WCGManager, and once
+        that set is empty, the main loop terminates.
+
+    For an example, see `examples/wcg_1d` and run with
+
+        python path/to/wcg_manager.py test_system.mgr
+
     """
     def __init__(self, control_file):
         self.control_file = control_file
