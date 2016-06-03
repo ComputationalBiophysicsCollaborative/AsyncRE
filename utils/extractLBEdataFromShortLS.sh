@@ -15,9 +15,16 @@ nskip=$5
 nprnt=$6
 rbgn=$7
 rend=$8
+ncopy=$9
 root_path=`pwd`
+icopy=0
 
 for folder in $job_dirs; do
+    ((icopy=icopy+1))
+    if ((icopy > ncopy)); then
+       exit
+    fi
+
     if [ -d $folder ]; then
         # cd $folder
         echo "working in the folder of $folder"

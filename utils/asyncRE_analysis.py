@@ -319,9 +319,9 @@ calculate the averages of binding energies for different thermodynamical states.
           for il in range(0,self.nlam):
             lambda_str =  self.lambdas[il]
             datafile = 'metadata/lbe_temp_T'+ temp_str + '_L' + lambda_str + '.dat'
-            fin = open(datafile ,"r")
+            fin = open(datafile ,'r')
             avgfile = 'metadata/lbe_avrg_T'+ temp_str + '_L' + lambda_str + '.dat'
-            fout = open(avgfile ,"a")
+            fout = open(avgfile ,'a')
             data =[]
             line = fin.readline()
             while line:
@@ -334,8 +334,9 @@ calculate the averages of binding energies for different thermodynamical states.
                  data.append(datablock)
               line = fin.readline()
             meanvalue=numpy.mean(data, axis=0)
+            stdvalue=numpy.std(data, axis=0)
             for im in range(0,len(meanvalue)) :
-	      fout.write("%s\t" %meanvalue[im])
+	      fout.write("%s\t%s\t" %(meanvalue[im],stdvalue[im]))
 	    fout.write("\n")
             fin.close()
             fout.close()
@@ -401,13 +402,23 @@ calculate the binding free energies at different time from the time series of bi
                os.system(uwham_cmd)
                f = open(deltGfile ,"r")
                line = f.readline()
+               line = line.strip('\n')
                f.close()
                #bfedata=line.split()
                #bfe_outf.write("%d" % int(ndata))
                #for j in range(0, len(bfedata)) :
                #    bfe_outf.write("%f" % float(bfedata[j]))
                #bfe_outf.write("\n")
-               line = str(nhead) + '   ' + line
+               if self.CalcBindEng :
+                  os.system('tail -n 1 metadata/lbe_avrg_T300.0_L1.0.dat > avrg_temp.dat')                
+                  f = open("avrg_temp.dat" ,"r")
+                  line_avrg = f.readline()
+                  line_avrg = line_avrg.strip('\n')
+                  f.close()
+                  line = str(nhead) + '\t' + line + '\t' + line_avrg + '\n' 
+               else :
+		  line = str(nhead) + '\t' + line + '\n'
+
                bfe_outf.write(line)
 	if self.BindFreeEng :
            bfe_outf.close()

@@ -23,13 +23,13 @@ echo "--------------------------------------------------------------------------
 for folder in $job_dirs; do
     if [ -d $folder ]; then
 	cd $folder
-	echo "working in the folder of $folder"
+	# echo "working in the folder of $folder"
         for (( ir=$rbgn; ir<=$rend; ir++ ))
         do
             cd r$ir
             rm -rf lbe.dat
             python $async_scripts/getImpactOutFromShort.py $basename $neq $nprod $nskip $nfreq
-            echo "Finished collecting data in r$ir"
+            # echo "Finished collecting data in r$ir"
             cd ../
         done
 	cd $root_path
