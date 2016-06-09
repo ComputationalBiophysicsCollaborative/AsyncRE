@@ -14,9 +14,11 @@ functionality, they will inherit an empty method
 
 import os
 import logging, logging.config
+from StringIO import StringIO
+from async_re import LOGGER_TXT
 
 class Transport(object):
-    logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "utils/logging.conf"))
+    logging.config.fileConfig(StringIO(LOGGER_TXT))
 
     def __init__(self):
         pass

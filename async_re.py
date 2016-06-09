@@ -28,8 +28,35 @@ from configobj import ConfigObj
 
 from gibbs_sampling import *
 
+from StringIO import StringIO
 
+LOGGER_TXT = """
+[loggers]
+keys=root,async_re
 
+[handlers]
+keys=console
+
+[formatters]
+keys=async_re
+
+[logger_root]
+handlers=
+
+[logger_async_re]
+level=INFO
+handlers=console
+qualname=async_re
+
+[handler_console]
+class=StreamHandler
+formatter=async_re
+args=(sys.stdout,)
+
+[formatter_async_re]
+format=%(asctime)s - %(levelname)-8s - %(name)-30s - %(message)s
+datefmt=%Y-%m-%d %H:%M:%S
+"""
 
 __version__ = '0.3.2-alpha2'
 
@@ -68,7 +95,8 @@ class async_re(object):
     """
     Class to set up and run asynchronous file-based RE calculations
     """
-    logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "utils/logging.conf"))
+    #logging.config.fileConfig(os.path.join(os.path.dirname(__file__), "utils/logging.conf"))
+    logging.config.fileConfig(StringIO(LOGGER_TXT))
 
     def __init__(self, command_file, options):
         self.command_file = command_file
@@ -175,7 +203,7 @@ class async_re(object):
                     node_info[nodeid]["tmp_folder"] = str(lineID[5].strip())
                     #tmp_folder has to be pre-assigned
                     if node_info[nodeid]["tmp_folder"] == "":
-                       self._exit('tmp_folder in nodefile needs to be specified')
+                        self._exit('tmp_folder in nodefile needs to be specified')
                     nodeid += 1
                     line = f.readline()
                 f.close()
