@@ -66,6 +66,21 @@ class asyncRE_analysis:
             self.BindFreeEng=False
         else :
             self._exit("BIND_FREE_ENG option is not set right (yes or no).")
+
+        if (self.BindFreeEng) :
+           self.InclFlatEng=False
+           if self.keywords.get('INCL_FLAT_ENG') is None:
+              self.InclFlatEng=False
+           elif self.keywords.get('INCL_FLAT_ENG').lower() == 'yes':
+              self.InclFlatEng=True
+           elif self.keywords.get('INCL_FLAT_ENG').lower() == 'no':
+              self.InclFlatEng=False
+           else :
+              self.InclFlatEng=False
+           if not self.InclFlatEng :
+              print 'No flattening energy included.'
+
+
         if ( self.BindFreeEng or self.CalcBindEng) :
             if self.keywords.get('NBEGIN') is None:
                 self._exit("The starting point (NBEGIN) for data needs to be specified")
@@ -182,6 +197,71 @@ neg.pot <- matrix(0, N,m)
 for (j in 1:m)
 
 neg.pot[,j] <- npot.fcn(x=lig.data, lam=lam[j])
+# estimate free energies, note that size=NULL because label is given
+require(UWHAM)
+out <- uwham(label=state.labels, logQ=neg.pot, fisher=TRUE)
+# free energies as a function of lambda, 0.36 kcal/mol is a standard
+# state correction
+ze <- matrix(out$ze, nrow=1, ncol=m)
+-ze/bet
+ve <- matrix(out$ve,nrow=1, ncol=m)
+sqrt(ve)/bet
+
+dg <- (-ze[,m]+ze[,1])/bet
+dv <- sqrt(ve[,m]+ve[,1])/bet
+feout <-c(dg,dv)
+
+# print out
+# printf <- function(...)print(sprintf(...))
+#
+write(feout,file="%s", ncolumns = 2, append = FALSE, sep = " ")
+
+# block bootstrap for free energies, note that proc.type="serial"
+# for simulated tempering data.
+# To save time for package checking, this is not run.
+#out.boot <- uwham.boot(proc.type="serial", block.size=10, boot.size=100, label=state.labels, logQ=neg.pot)
+
+#-out.boot$ze/bet
+#sqrt(out.boot$ve)/bet
+
+"""
+
+        self.uwham1Dflat =  """
+
+rm(list=ls())
+
+# loads dataset
+mydata = read.table("%s")
+data(mydata)
+lig.ebind <- mydata$V5
+lig.eflat <- mydata$V6
+
+# sample size
+N <- length(lig.ebind)
+# lambda states
+lam <- c(%s)
+m <- length(lam)
+
+# inverse temperature
+bet <- 1.0/(0.001986209*%s)
+# negative potential function
+npot.fcn <- function(x,y,lam) {
+  if (lam < 0.5) {
+    pot=-bet*(lam*x-2.0*lam*y)
+  } else {
+    pot=-bet*(lam*x-2.0*(1-lam)*y)
+  }
+  return(pot)
+}
+
+# state labels based on lambda values
+# note that labels=1:m, not 0:(m-1)
+state.labels <- factor(mydata$V4, labels=1:m)
+# compute negative potential
+neg.pot <- matrix(0, N,m)
+for (j in 1:m)
+
+neg.pot[,j] <- npot.fcn(x=lig.ebind,y=lig.eflat,lam=lam[j])
 # estimate free energies, note that size=NULL because label is given
 require(UWHAM)
 out <- uwham(label=state.labels, logQ=neg.pot, fisher=TRUE)
@@ -333,10 +413,11 @@ calculate the averages of binding energies for different thermodynamical states.
                    datablock.append(float(words[iw]))
                  data.append(datablock)
               line = fin.readline()
+            minvalue=numpy.min(data,axis=0)
             meanvalue=numpy.mean(data, axis=0)
             stdvalue=numpy.std(data, axis=0)
             for im in range(0,len(meanvalue)) :
-	      fout.write("%s\t%s\t" %(meanvalue[im],stdvalue[im]))
+	      fout.write("%s\t%s\t%s\t" %(minvalue[im],meanvalue[im],stdvalue[im]))
 	    fout.write("\n")
             fin.close()
             fout.close()
@@ -358,7 +439,10 @@ calculate the binding free energies at different time from the time series of bi
         temps_str += self.temperatures[self.ntemp-1]
 
         if (self.ntemp == 1) :
-            uwham_input = self.uwham1D % (datafile,lambdas_str,temps_str,deltGfile)
+           if self.InclFlatEng :
+              uwham_input = self.uwham1Dflat % (datafile,lambdas_str,temps_str,deltGfile)
+           else:
+              uwham_input = self.uwham1D % (datafile,lambdas_str,temps_str,deltGfile)
         else:
             uwham_input = self.uwham2D % (datafile,lambdas_str,temps_str,deltGfile)
         f = open(R_inpfile, 'w')
