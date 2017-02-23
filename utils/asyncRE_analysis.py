@@ -67,18 +67,17 @@ class asyncRE_analysis:
         else :
             self._exit("BIND_FREE_ENG option is not set right (yes or no).")
 
-        if (self.BindFreeEng) :
-           self.InclFlatEng=False
-           if self.keywords.get('INCL_FLAT_ENG') is None:
-              self.InclFlatEng=False
-           elif self.keywords.get('INCL_FLAT_ENG').lower() == 'yes':
-              self.InclFlatEng=True
-           elif self.keywords.get('INCL_FLAT_ENG').lower() == 'no':
-              self.InclFlatEng=False
-           else :
-              self.InclFlatEng=False
-           if not self.InclFlatEng :
-              print 'No flattening energy included.'
+        self.InclFlatEng=False
+        if self.keywords.get('INCL_FLAT_ENG') is None:
+            self.InclFlatEng=False
+        elif self.keywords.get('INCL_FLAT_ENG').lower() == 'yes':
+             self.InclFlatEng=True
+        elif self.keywords.get('INCL_FLAT_ENG').lower() == 'no':
+             self.InclFlatEng=False
+        else :
+             self.InclFlatEng=False
+        if not self.InclFlatEng :
+             print 'No flattening energy included.'
 
 
         if ( self.BindFreeEng or self.CalcBindEng) :
@@ -559,7 +558,11 @@ calculate the binding free energies at different time from the time series of bi
         stateValues=[]
         stateValues.append(data[0][1])
         nf=len(data[0])
-        stateValues.append(data[0][nf-2])
+        if self.InclFlatEng :
+           stateValues.append(data[0][nf-4])
+        else: 
+           stateValues.append(data[0][nf-2])
+
 	return stateValues
 
 
