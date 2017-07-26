@@ -35,9 +35,9 @@ do
    ntot=$(( $nfrq*$ncop ))
    cat input/asyncRE_analysis.cntl_temp | sed "s/NSTART/1/" | sed "s/NLAST/1/" | sed "s/NINTV/$ntot/" > $folder/asyncRE_analysis.cntl 
    cd $folder
-   rm -rf .RData 
    python $async_scripts/asyncRE_analysis.py asyncRE_analysis.cntl  >& asyncRE_analysis.log
    cat bfe_conv.dat >> bfe_conv_all.dat 
+   rm -rf .RData 
    cd ../
 done
 
