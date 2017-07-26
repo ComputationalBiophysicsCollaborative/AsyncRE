@@ -148,7 +148,8 @@ Enqueues a job based on provided job info.
             self.boinc_db = MySQLdb.connect(user=self.db_user, passwd=self.db_pwd,
                                             db=self.db_name)
         except operational_error as e:
-            self.logger.warning("poll(): Received operational error %d: %s.", e.errno, e.strerror)
+            #self.logger.warning("poll(): Received operational error %d: %s.", e.errno, e.strerror)
+            self.logger.warning("poll(): Received MySQLDB error.")
             self.logger.warning("poll(): Trying one more time in %ds.", error_wait)
             time.sleep(error_wait)
             self.boinc_db = MySQLdb.connect(user=self.db_user, passwd=self.db_pwd,
