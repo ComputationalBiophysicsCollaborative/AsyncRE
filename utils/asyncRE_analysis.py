@@ -90,6 +90,10 @@ class asyncRE_analysis:
             if self.keywords.get('NFREQ') is None:
                 self._exit("The frequency (NFREQ) for data needs to be specified")
             self.nfreq = int(self.keywords.get('NFREQ'))
+            if self.keywords.get('NEQUL') is None:
+                self._exit("The number of equilibrium steps (NEQUL for data needs to be specified")
+            self.nequl = int(self.keywords.get('NEQUL'))
+ 
         if self.keywords.get('CUMULATED') is None:
             self.cumulated=False
         elif self.keywords.get('CUMULATED').lower() == 'yes':
@@ -467,7 +471,7 @@ calculate the binding free energies at different time from the time series of bi
 	   os.system("rm -f metadata/lbe_avrg_*.dat")
 
         for i in range(self.nbgn,self.nend+1):
-            nhead = i*self.nfreq
+            nhead = i*self.nfreq + self.nequl
             if (not self.cumulated):
                 ndata = self.ndata
                 ntail = self.ndata
