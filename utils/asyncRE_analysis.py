@@ -102,7 +102,16 @@ class asyncRE_analysis:
             if self.keywords.get('NDATA') is None:
                 self._exit("The number of data point (NDATA) needs to be specified")
             self.ndata = int(self.keywords.get('NDATA'))
-
+ 
+        # Calculate the diffision coefficent in lambda space
+        if self.keywords.get('DIFF_COEFF') is None:
+            self.DiffCoeff=False 
+        elif self.keywords.get('DIFF_COEFF').lower() == 'yes':
+            self.DiffCoeff=True
+        elif self.keywords.get('DIFF_COEFF').lower() == 'no':
+            self.DiffCoeff=False
+        else :
+            self.DiffCoeff=False
 
         #list of lambdas
         if self.keywords.get('LAMBDAS') is None:
@@ -603,6 +612,57 @@ extract the conformers at certain thermodynamic states.
 	               cp_cmd= 'cp ' + infile_lig + ' ' + foldername + '/' + outfile_lig + '; cp ' + infile_rcpt + ' ' + foldername + '/' + outfile_rcpt
 	 	   os.system(cp_cmd)
 		 
+    def calculateLambdaDiff(self):
+        """
+calculate the diffision coefficient in lamda state space.
+"""
+        lambda_dict={}
+        deltlambdas=[]
+        taulambdas=[]
+        histcounts=[]
+        print ("make the state dictionary:")
+        for il in range(0,self.nlam):
+            lambda_dict[self.lambdas[il]]=il
+            print ("%s : %d" %(self.lambdas[il],il))
+            deltlambdas.append(0.0)
+            taulambdas.append(0.0)
+            histcounts.append(0)
+        #print lambda_dict
+
+        for ir in range(self.repstart,self.repend+1):
+             inpf = "r%d/lbe.dat" %ir
+             f=open(inpf,'r')
+             lambdas_inp=[]
+             line = f.readline()
+             while line:
+                 words = line.split()
+                 lambdas_inp.append(words[3])
+                 line = f.readline()                 
+             f.close()
+             #print ("finish reading in r%d/lbe.dat"%ir)
+             lambda_pre=lambdas_inp[0]
+             tau_lam=1.0
+             for j in range(1,len(lambdas_inp)):
+                 if lambdas_inp[j] == lambda_pre :         
+                    tau_lam=tau_lam+1
+                 else :
+                    deltlambdas[lambda_dict[lambda_pre]] = deltlambdas[lambda_dict[lambda_pre]]+math.pow(float(lambdas_inp[j])-float(lambda_pre),2.0)
+                    taulambdas[lambda_dict[lambda_pre]] = taulambdas[lambda_dict[lambda_pre]] + tau_lam
+                    histcounts[lambda_dict[lambda_pre]] = histcounts[lambda_dict[lambda_pre]] + 1
+                    #print ("%s %s %d" %(lambdas_inp[j], lambda_pre, lambda_dict[lambda_pre]))
+                    lambda_pre = lambdas_inp[j]
+                    tau_lam=1.0
+             #print ("finish calculating in r%d/lbe.dat"%ir)
+        f=open("diffusion_param.dat",'w')
+        for il in range(0,self.nlam) :
+           f.write("%d %s %15.10f %15.10f %15d \n" %(il,self.lambdas[il],deltlambdas[il],taulambdas[il],histcounts[il]))
+        f.close()
+
+        mean_deltlambda=numpy.mean(deltlambdas)/numpy.mean(histcounts)
+        mean_taulambda=numpy.mean(taulambdas)/numpy.mean(histcounts)       
+        diff_coeff=mean_deltlambda/(2.0*mean_taulambda)
+        print ("%s avg_dl2= %15.10f avg_tau= %15.10f diff_coeff= %15.10f" % ("Diffision on lambda space:",mean_deltlambda,mean_taulambda,diff_coeff)) 
+
 
 if __name__ == '__main__':
 
@@ -631,3 +691,6 @@ if __name__ == '__main__':
 
     if (async_analy.ExtConf) : 
 	async_analy.extConformers() 
+    if (async_analy.DiffCoeff) :
+        async_analy.calculateLambdaDiff()
+
