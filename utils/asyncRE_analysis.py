@@ -79,7 +79,23 @@ class asyncRE_analysis:
         if not self.InclFlatEng :
              print 'No flattening energy included.'
 
-
+        if ( self.BindFreeEng) :
+           if self.keywords.get('UWHAM_METH') is None: 
+              self.MethWHAM == 'RUWHAM'
+           else :
+              self.MethWHAM = self.keywords.get('UWHAM_METH') 
+              if self.MethWHAM == 'CPPUWHAM':
+                 if self.keywords.get('CPP_UWHAM_PATH') is None:
+                    self._exit("CPP_UWHAM_PATH option is not set.")
+                 else : 
+                     self.cppUWHAMPath = self.keywords.get('CPP_UWHAM_PATH') 
+                     print ('Using CPP UWHAM under' + self.cppUWHAMPath) 
+              elif self.MethWHAM == 'RUWHAM':
+                   print ('Using R UWHAM')      
+              else :
+                  self._exit("Meth_WHAM is not set right.")
+ 
+ 
         if ( self.BindFreeEng or self.CalcBindEng) :
             if self.keywords.get('NBEGIN') is None:
                 self._exit("The starting point (NBEGIN) for data needs to be specified")
@@ -425,6 +441,41 @@ calculate the averages of binding energies for different thermodynamical states.
             fin.close()
             fout.close()
 
+
+    def buildBindEngMatrix(self):
+        """
+        build the binding energies at all lambda states for C++ UWHAM module
+"""
+        os.system('rm -rf input4uwham.dat')
+        for it in range(0,self.ntemp):
+            temp_str = self.temperatures[it]
+            for il in range(0,self.nlam):
+                lambda_str =  self.lambdas[il]
+                datafile = 'metadata/lbe_temp_T'+ temp_str + '_L' + lambda_str + '.dat'
+                fin = open(datafile ,'r')
+                astsfile = 'metadata/lbe_asts_T'+ temp_str + '_L' + lambda_str + '.dat'
+                fout = open(astsfile ,'w')
+                fout.write("# state %d \n"%il)
+                data =[]
+                line = fin.readline()
+                while line:
+                    words = line.split()
+                    printline = ""
+                    for ik in range(0,self.nlam):
+                        biasE= float(self.lambdas[ik])*float(words[4]) 
+                        printline += "%12g "%(biasE)
+                    printline += '\n'
+                    fout.write(printline)
+                    line = fin.readline()
+                fin.close()
+                fout.close()
+                tmp_cmd = 'cat ' + astsfile + ' >> ' + ' input4uwham.dat '
+                os.system(tmp_cmd)
+
+
+
+
+
     def calculateBindFreeEng(self):
         """
 calculate the binding free energies at different time from the time series of binding energies.
@@ -509,6 +560,75 @@ calculate the binding free energies at different time from the time series of bi
                bfe_outf.write(line)
 	if self.BindFreeEng :
            bfe_outf.close()
+
+    def calculateBindFreeEngCPP(self):
+        """
+calculate the binding free energies at different time from the time series of binding energies.
+"""
+        deltGfile = 'DeltG.dat'
+
+        if self.BindFreeEng :
+           if (not self.cumulated):
+              bfe_outf = open('bfe_conv_noc.dat', 'w')
+           else:
+              bfe_outf = open('bfe_conv.dat', 'w')
+        if self.MethWHAM == 'CPPUWHAM' :
+           os.system("mkdir metadata")
+           os.system("rm -f metadata/lbe_avrg_*.dat")
+
+        for i in range(self.nbgn,self.nend+1):
+            nhead = i*self.nfreq + self.nequl
+            if (not self.cumulated):
+                ndata = self.ndata
+                ntail = self.ndata
+            else:
+                ndata = i*self.nfreq
+                ntail = i*self.nfreq
+
+            for ir in range(self.repstart,self.repend+1):
+                inpf = "r%d/lbe.dat" %ir
+                outf = "r%d/lbe_temp.dat" %ir
+                lbe_cmd = 'head -n ' + str(nhead) + ' ' + inpf + '| tail -n ' + str(ntail) + ' > ' + outf
+                os.system(lbe_cmd)
+                if (ir == self.repstart ):
+                    tmp_cmd = 'cat ' + outf + '> lbe_temp.dat'
+                else:
+                    tmp_cmd = 'cat ' + outf + '>> lbe_temp.dat'
+                os.system(tmp_cmd)
+
+            self.checkBindEngData()
+            if self.MethWHAM == 'CPPUWHAM':
+               self.reorgBindEngData()
+               self.buildBindEngMatrix()
+
+            if self.CalcBindEng :
+               self.calcBindEngData()
+
+            if self.BindFreeEng :
+               uwham_cmd = self.cppUWHAMPath + '/uwham.o -d input4uwham.dat -i 1 -o 1 -t ' + self.temperatures[0] \
+                           + ' -q 100 -m 1 -e 1.0e-6 -w ' + str(self.nlam) + ' > uwham.log '
+               os.system(uwham_cmd)
+               tmp_cmd= "cat uwham.log | grep -A 1 'free energy difference' | tail -n 1 > " + deltGfile 
+               os.system(tmp_cmd)
+               f = open(deltGfile ,"r")
+               line = f.readline()
+               fbes = line.split()              
+               f.close()
+               if self.CalcBindEng :
+                  os.system('tail -n 1 metadata/lbe_avrg_T300.0_L1.0.dat > avrg_temp.dat')
+                  f = open("avrg_temp.dat" ,"r")
+                  line_avrg = f.readline()
+                  line_avrg = line_avrg.strip('\n')
+                  f.close()
+                  line = str(nhead) + '\t' + fbes[self.nlam-1] + '\t' + line_avrg + '\n'
+               else :
+                  line = str(nhead) + '\t' + line + '\n'
+               bfe_outf.write(line)
+        if self.BindFreeEng :
+           bfe_outf.close()
+
+
+
 
     def getStateValues(self,file):
     	if not os.path.exists(file):
@@ -630,8 +750,13 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
     async_analy = asyncRE_analysis(commandFile, options=None)
-    if ( async_analy.CalcBindEng or async_analy.BindFreeEng) : 
-	async_analy.calculateBindFreeEng()
+    if (async_analy.CalcBindEng or async_analy.BindFreeEng) : 
+        if (async_analy.MethWHAM =="RUWHAM") :
+            async_analy.calculateBindFreeEng()
+        elif  (async_analy.MethWHAM =="CPPUWHAM") :
+            async_analy.calculateBindFreeEngCPP()
+        else: 
+            sys.exit("MethWHAM is not set right.")       
 
     if (async_analy.ExtConf) : 
 	async_analy.extConformers() 

@@ -17,9 +17,9 @@ for folder in $job_dirs; do
     if [ -d $folder ]; then
 	cd $folder
 	echo "working in the folder of $folder"
-          rm -rf .RData
-          python $async_scripts/asyncRE_analysis.py $cntl_file  >& asyncRE_analysis.log
-          # mv bfe_conv_noc.dat bfe_conv_noc.dat
+        python $async_scripts/asyncRE_analysis.py $cntl_file  >& asyncRE_analysis.log
+        rm -rf .RData
+        # mv bfe_conv_noc.dat bfe_conv_noc.dat
 	echo "finished converge analysis"
 	cd $root_path
     else 
